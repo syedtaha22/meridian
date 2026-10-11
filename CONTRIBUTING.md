@@ -85,9 +85,9 @@ npm run format:check
 
 - The package takes its colors and fonts from the host's CSS custom properties, each with a
   fallback, and its class names begin with `chess-`.
-- The piece drawings are the SVGs in [pieces](frontend/src/assets/pieces). After changing one,
-  run `npm run build:pieces` and commit the regenerated
-  [piece-sprite.ts](frontend/src/lib/piece-sprite.ts).
+- The black piece drawings are the SVGs in [pieces](frontend/src/assets/pieces), and the white
+  pieces are made from them. After changing one, run `npm run build:pieces` and commit the
+  regenerated [piece-sprite.ts](frontend/src/lib/piece-sprite.ts).
 - Changes to the rules engine in [chess-rules.ts](frontend/src/lib/chess-rules.ts) should come
   with a test. The perft tests there check the backend's six reference positions.
 
