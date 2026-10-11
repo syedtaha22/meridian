@@ -45,7 +45,9 @@ interface LineChartProps {
 
 const WIDTH = 480
 const HEIGHT = 240
-const MARGIN = { top: 14, right: 16, bottom: 38, left: 60 }
+// The left and right margins are equal, so that the drawn area is centered in its box and a pair
+// of charts is centered under the board.
+const MARGIN = { top: 14, right: 60, bottom: 38, left: 60 }
 
 function niceMax(value: number): number {
   if (value <= 0) return 1
