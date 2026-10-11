@@ -1,0 +1,10 @@
+full (1000ms per move) against UCI_Elo opponent (1000ms per move)
+opponent   games   wins  draws losses    score   rating from this level
+1800          50     42      0      8   0.840         2088 (1980 to 2283)
+2000          50     33      1     16   0.670         2123 (2029 to 2240)
+2200          50     27      1     22   0.550         2235 (2139 to 2336)
+2400          50     24      2     24   0.500         2400 (2303 to 2497)
+2600          50     16      1     33   0.330         2477 (2360 to 2571)
+2800          50      3      2     45   0.080         2376 (2003 to 2499)
+
+Estimated rating: 2294 (95% interval 2240 to 2347) over 300 games

@@ -1,0 +1,2 @@
+iterative (50ms) vs quiescence (depth 5)
+games 200: +98 =39 -63  score 0.588  (95% interval 0.527 to 0.648)  Elo +61 (+18 to +106)

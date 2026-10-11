@@ -1,0 +1,20 @@
+{
+  "attacks": "magic",
+  "perft": [
+    {"name": "initial", "depth": 5, "nodes": 4865609, "correct": true, "seconds": [0.1227, 0.1092, 0.1039, 0.1040, 0.1046, 0.1043, 0.1047], "nps": {"n": 7, "median": 46499330, "min": 39653141, "p25": 45518083, "p75": 46724531, "mean": 45355198, "cv_percent": 5.38}},
+    {"name": "kiwipete", "depth": 4, "nodes": 4085603, "correct": true, "seconds": [0.0916, 0.0913, 0.0915, 0.0911, 0.0911, 0.0914, 0.0910], "nps": {"n": 7, "median": 44736986, "min": 44616707, "p25": 44676840, "p75": 44853715, "mean": 44760483, "cv_percent": 0.23}},
+    {"name": "position-3", "depth": 6, "nodes": 11030083, "correct": true, "seconds": [0.3044, 0.3038, 0.3039, 0.3025, 0.3039, 0.3020, 0.3024], "nps": {"n": 7, "median": 36308438, "min": 36233137, "p25": 36290193, "p75": 36474462, "mean": 36371199, "cv_percent": 0.30}},
+    {"name": "position-4", "depth": 5, "nodes": 15833292, "correct": true, "seconds": [0.3623, 0.3619, 0.3625, 0.3620, 0.3621, 0.3625, 0.3621], "nps": {"n": 7, "median": 43721004, "min": 43674465, "p25": 43688030, "p75": 43734538, "mean": 43712417, "cv_percent": 0.06}},
+    {"name": "position-5", "depth": 4, "nodes": 2103487, "correct": true, "seconds": [0.0480, 0.0479, 0.0479, 0.0478, 0.0479, 0.0478, 0.0478], "nps": {"n": 7, "median": 43957216, "min": 43829519, "p25": 43944370, "p75": 43989423, "mean": 43953012, "cv_percent": 0.13}},
+    {"name": "position-6", "depth": 4, "nodes": 3894594, "correct": true, "seconds": [0.0823, 0.0825, 0.0825, 0.0820, 0.0820, 0.0820, 0.0820], "nps": {"n": 7, "median": 47469399, "min": 47200388, "p25": 47256362, "p75": 47471194, "mean": 47376548, "cv_percent": 0.26}}
+  ],
+  "perft_nps_median_of_positions": 44347101,
+  "legal_movegen_ns_per_position": {"n": 7, "median": 677.3, "min": 674.7, "p25": 675.5, "p75": 678.8, "mean": 677.2, "cv_percent": 0.28},
+  "copy_make_ns_per_move": {"n": 7, "median": 21.19, "min": 21.01, "p25": 21.03, "p75": 21.22, "mean": 21.13, "cv_percent": 0.46},
+  "slider_ns_per_lookup": {
+    "rook_rays": {"n": 7, "median": 34.77, "min": 34.53, "p25": 34.59, "p75": 35.09, "mean": 35.02, "cv_percent": 1.85},
+    "rook_dispatch": {"n": 7, "median": 1.30, "min": 1.30, "p25": 1.30, "p75": 1.31, "mean": 1.31, "cv_percent": 1.10},
+    "bishop_rays": {"n": 7, "median": 27.81, "min": 27.53, "p25": 27.62, "p75": 28.28, "mean": 28.29, "cv_percent": 3.93},
+    "bishop_dispatch": {"n": 7, "median": 0.95, "min": 0.94, "p25": 0.95, "p75": 0.95, "mean": 0.95, "cv_percent": 0.64}
+  }
+}

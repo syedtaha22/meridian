@@ -1,0 +1,17 @@
+# region<TAB>name<TAB>fen. Black to move in every position, because the original engine
+# only plays Black. Sampled from Lichess games (see perft.txt for the rules positions).
+opening	ope-1	r4rk1/ppp2ppp/1b6/1Q2Pb2/1n1R3q/1PN1P2N/PBP1B1PP/2K4R b
+opening	ope-2	r2qkb1r/pb3ppp/1p3n2/2p5/Pn6/BP1pP3/3P1PPP/R1NQKBNR b KQkq
+opening	ope-3	r4rk1/ppqb1ppp/3bpn2/2ppN3/8/1P2P1Q1/PBPP1PPP/RN3RK1 b
+opening	ope-4	r2qkb1r/1p3ppp/p1n1pnb1/2pp4/2PP4/1P1BPN2/PBQN1PPP/R3K2R b KQkq
+opening	ope-5	r2q1rk1/ppp1bppp/3p1n2/5b2/2PQ4/1PNBP3/PB3PPP/R3K2R b KQ
+middlegame	mid-1	r1b1k2r/ppp2pBp/7q/8/6n1/1P4P1/P2PPPB1/RN1Q1RK1 b kq
+middlegame	mid-2	1q3k1r/5p2/4pQ2/2R5/Pp6/1P1PP2P/5P2/5R1K b
+middlegame	mid-3	1k1r4/ppp1bNp1/q4np1/3n4/2P1p2P/PP2P1P1/KB2QPB1/3R4 b
+middlegame	mid-4	6k1/1p2pp1p/p2p4/3Pn1p1/P2NP1P1/1Pr2P1P/3K4/1R6 b
+middlegame	mid-5	3r4/4r1kp/4Pqp1/1Q6/1p6/1P1P1P2/P1P1R3/2K2R2 b
+endgame	end-1	8/8/1p6/ppk1p1p1/4P1P1/PP1P4/3K4/8 b
+endgame	end-2	1r6/1P3R2/8/3p3K/8/1RPk1P1P/6r1/8 b
+endgame	end-3	1Q1R4/8/8/2r5/5p2/4k2p/R6P/7K b
+endgame	end-4	8/1K1k4/3p4/P7/4Pppp/8/5PPP/8 b
+endgame	end-5	8/1kn5/8/PPK1Bp2/8/7p/8/8 b

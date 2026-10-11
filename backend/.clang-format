@@ -1,0 +1,25 @@
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+ColumnLimit: 100
+BreakBeforeBraces: Attach
+PointerAlignment: Right
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseColons: false
+AllowShortBlocksOnASingleLine: Never
+NamespaceIndentation: All
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 2
+AlignTrailingComments: true
+IndentCaseLabels: false
+AccessModifierOffset: -4
+ReflowComments: true
+SeparateDefinitionBlocks: Always
+EmptyLineBeforeAccessModifier: LogicalBlock

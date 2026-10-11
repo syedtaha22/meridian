@@ -1,0 +1,8 @@
+build/
+results/
+*.csv
+*.svg
+*.html
+!tools/template/*.html
+.clang-format
+README.md

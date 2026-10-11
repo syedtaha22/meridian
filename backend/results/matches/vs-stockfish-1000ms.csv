@@ -1,0 +1,7 @@
+a,b,wins,draws,losses
+step07-1000ms,stockfish-1800,81,3,16
+step07-1000ms,stockfish-2000,72,2,26
+step07-1000ms,stockfish-2200,63,2,35
+step07-1000ms,stockfish-2400,42,2,56
+step07-1000ms,stockfish-2600,29,4,67
+step07-1000ms,stockfish-2800,7,6,87

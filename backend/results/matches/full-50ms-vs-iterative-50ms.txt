@@ -1,0 +1,2 @@
+full (50ms) vs iterative (50ms)
+games 200: +135 =29 -36  score 0.748  (95% interval 0.693 to 0.802)  Elo +189 (+142 to +243)

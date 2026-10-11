@@ -1,0 +1,15 @@
+a,b,wins,draws,losses
+step00-depth3,stockfish-1320,6,6,12
+step00-depth3,stockfish-1500,3,2,19
+step00-depth3,step01-depth1,22,2,0
+step00-depth3,step01-depth2,13,6,5
+step00-depth3,step01-depth3,2,7,15
+step01-depth1,stockfish-1320,0,2,48
+step01-depth1,stockfish-1500,0,0,50
+step01-depth1,stockfish-1800,0,0,50
+step01-depth2,stockfish-1320,4,1,45
+step01-depth2,stockfish-1500,4,1,45
+step01-depth2,stockfish-1800,0,0,50
+step01-depth3,stockfish-1320,13,9,28
+step01-depth3,stockfish-1500,4,1,45
+step01-depth3,stockfish-1800,1,1,48
