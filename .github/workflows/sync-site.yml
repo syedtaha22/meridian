@@ -6,7 +6,7 @@ name: Sync site submodule
 # larger clone of this whole repo (a submodule pulls the entire repo, backend/ included).
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths: ['frontend/**']
 
 jobs:
