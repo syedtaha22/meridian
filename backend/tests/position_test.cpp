@@ -51,6 +51,20 @@ namespace {
         check(!chess::Position::from_fen("4k3/8/8/8/8/8/8/P3K3 w - - 0 1"),
               "pawn on first rank rejected");
         check(!chess::Position::from_fen("4k3/8/8/8/8/8/8/4K3 x - - 0 1"), "bad side rejected");
+
+        // A king that the side to move could capture would corrupt the board in the search.
+        check(!chess::Position::from_fen("4k3/4R3/8/8/8/8/8/4K3 w - - 0 1"),
+              "the side not to move in check is rejected");
+        check(!chess::Position::from_fen("4k3/8/8/8/8/8/8/4K3 w - e3 0 1"),
+              "en passant square without a pawn is rejected");
+        check(!chess::Position::from_fen("4k3/8/8/3pP3/8/8/8/4K3 w - e5 0 1"),
+              "en passant square on a wrong rank is rejected");
+        check(chess::Position::from_fen("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1").has_value(),
+              "a real en passant square is accepted");
+        check(!chess::Position::from_fen("4k3/8/8/8/8/8/8/4K3 w - - -1 1"),
+              "negative halfmove clock rejected");
+        check(!chess::Position::from_fen("4k3/8/8/8/8/8/8/4K3 w - - 0 0"),
+              "fullmove number below 1 rejected");
     }
 
     void test_attacks() {

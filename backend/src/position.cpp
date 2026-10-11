@@ -274,6 +274,27 @@ namespace chess {
             }
 
             pos.en_passant_ = make_square(ep[0] - 'a', ep[1] - '1');
+
+            // The square must be the one behind a pawn of the side that has just moved.
+            const bool white_to_move = pos.side_ == kWhite;
+            const int behind = white_to_move ? -8 : 8;
+            const int expected_rank = white_to_move ? 5 : 2;
+            const Square target = pos.en_passant_;
+            const Piece pusher = make_piece(white_to_move ? kBlack : kWhite, kPawn);
+
+            if (rank_of(target) != expected_rank || pos.board_[target] != kNoPiece ||
+                pos.board_[target + behind] != pusher) {
+                return std::nullopt;
+            }
+        }
+
+        if (halfmove < 0 || halfmove > 1000 || fullmove < 1) {
+            return std::nullopt;
+        }
+
+        // The side that is not to move cannot be in check: its king could be captured.
+        if (pos.is_attacked(pos.king_square(~pos.side_), pos.side_)) {
+            return std::nullopt;
         }
 
         pos.halfmove_ = halfmove;
