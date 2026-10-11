@@ -1,0 +1,21 @@
+name: Feature request
+description: A change to the engine, the server or the board.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing or limited
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What the change would be
+      description: For a search or evaluation technique, a reference and how to measure its effect.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

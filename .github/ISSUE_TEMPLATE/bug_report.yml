@@ -1,0 +1,43 @@
+name: Bug report
+description: The engine, the server or the board does something wrong.
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Engine (a wrong or illegal move, a crash, a hang)
+        - Server (the HTTP API)
+        - Board (the web interface)
+        - Benchmarks or tools
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what should happen instead
+    validations:
+      required: true
+  - type: textarea
+    id: position
+    attributes:
+      label: Position and moves
+      description: The FEN the game started from and the UCI moves played since, for a position.
+      placeholder: "fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1, moves: e2e4 e7e5"
+  - type: textarea
+    id: request
+    attributes:
+      label: Request and response
+      description: For a server problem, the JSON sent to the server and what came back.
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: Engine version and settings
+      description: The engine version from `GET /health`, and the depth and time limit used.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, compiler or browser, and how the engine was started.

@@ -1,0 +1,17 @@
+# C++
+backend/build/
+backend/build-*/
+
+# Node
+node_modules/
+.next/
+dist/
+.vitest/
+next-env.d.ts
+
+.envrc
+
+# OS/editor
+.DS_Store
+*.swp
+.vscode/
