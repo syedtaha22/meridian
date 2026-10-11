@@ -57,7 +57,7 @@ backend
 │   ├── visualize_tree.cpp       # a search tree as SVG and interactive HTML
 │   ├── play_match.cpp           # two configurations against each other
 │   └── uci_match.cpp            # a match against any UCI engine, with a rating estimate
-├── tree-examples                # search trees as SVG and HTML
+├── tree-examples                # search trees as SVG
 ├── cloudbuild.yaml              # builds the image and deploys it
 ├── CMakeLists.txt
 └── Dockerfile

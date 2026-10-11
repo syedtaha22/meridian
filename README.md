@@ -47,7 +47,7 @@ captures, ordered by the value of the captured piece and the value of the captur
 it tries the killer moves. Then it tries the other moves in the order of the history heuristic.
 
 The engine can draw the search tree as an SVG image or as an interactive page. The image below
-shows the tree from the initial position at depth 5. The interactive pages are in
+shows the tree from the initial position at depth 5. More examples are in
 [backend/tree-examples](backend/tree-examples).
 
 ![Search tree from the initial position](backend/tree-examples/initial-position.svg)
