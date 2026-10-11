@@ -87,11 +87,11 @@ The table shows the mean time per move at depth 3, 5 and 6. Step 00 is the origi
 | 00 | Original desktop engine (does not reach depth 5) | 24,379ms | n/a | n/a |
 | 01 | Bitboards, legal moves, plain alpha-beta, rays for sliding pieces | 0.82ms | 136ms | 1,609ms |
 | 02 | Magic bitboards for sliding pieces | 0.58ms | 94ms | 1,096ms |
-| 03 | Move ordering: captures by victim and attacker, killers, history | 0.16ms | 6.8ms | 26.9ms |
+| 03 | Move ordering: captures by victim and attacker, then promotions | 0.16ms | 6.8ms | 26.9ms |
 | 04 | Transposition table | 0.16ms | 7.0ms | 26.9ms |
 | 05 | Quiescence search | 0.56ms | 12.7ms | 85ms |
 | 06 | Iterative deepening and principal variation search | 0.41ms | 5.2ms | 24ms |
-| 07 | Null move pruning, late move reductions, check extension | 0.48ms | 2.4ms | 5.3ms |
+| 07 | Null move, late move reductions, killers, history, check extension | 0.48ms | 2.4ms | 5.3ms |
 
 Three results stand out:
 

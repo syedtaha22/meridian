@@ -13,7 +13,7 @@ to build and test each part, and what a change should include.
 │   ├── server         # the HTTP service
 │   ├── tests          # perft, mate puzzles, API tests
 │   ├── bench          # benchmark programs and position suites
-│   ├── tools          # matches, tree drawings, report
+│   ├── tools          # matches, tree drawings
 │   ├── results        # recorded benchmark and match results
 │   └── README.md      # the engine, the API and how to run the benchmarks
 ├── frontend           # the @chess/frontend React package, with its own rules engine
