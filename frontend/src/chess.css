@@ -595,6 +595,20 @@ html:not([data-theme='dark']) .chess-board {
   stroke-width: 2;
 }
 
+.chess-chart-line-dashed {
+  stroke-dasharray: 5 4;
+}
+
+.chess-chart-ring {
+  fill: var(--card, #ffffff);
+  stroke: var(--accent, #24406f);
+  stroke-width: 2;
+}
+
+.chess-chart-ring.is-active {
+  stroke-width: 2.5;
+}
+
 .chess-chart-cursor {
   stroke: var(--muted, #8b8d94);
   stroke-width: 1;

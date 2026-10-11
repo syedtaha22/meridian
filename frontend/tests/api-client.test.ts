@@ -51,7 +51,9 @@ describe('requestAiMove', () => {
       depth: 4,
       nodes: 1234,
       elapsedMs: 56.5,
+      roundTripMs: expect.any(Number),
     })
+    expect(result.roundTripMs).toBeGreaterThanOrEqual(0)
   })
 
   it('throws a ChessApiError that keeps the status when the backend answers an error', async () => {

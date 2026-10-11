@@ -63,7 +63,16 @@ export interface AiMove {
   score: Score
   depth: number
   nodes: number
+
+  /**
+   * Time the engine spent searching, as the server measured it.
+   */
   elapsedMs: number
+
+  /**
+   * Time from sending the request to receiving the reply, as the browser measured it.
+   */
+  roundTripMs: number
 }
 
 /**
@@ -74,7 +83,7 @@ export interface AiMove {
  * @param startFen The FEN the game started from.
  * @param moves The moves played since.
  * @param settings Depth and time limit.
- * @returns The move, its score and the search statistics.
+ * @returns The move, its score, the search statistics and the round trip time.
  */
 export async function requestAiMove(
   apiBaseUrl: string,
@@ -82,6 +91,7 @@ export async function requestAiMove(
   moves: Move[],
   settings: EngineSettings,
 ): Promise<AiMove> {
+  const started = performance.now()
   const data = await post<{
     move: string
     score: Score
@@ -95,6 +105,7 @@ export async function requestAiMove(
     depth: data.depth,
     nodes: data.nodes,
     elapsedMs: data.elapsed_ms,
+    roundTripMs: performance.now() - started,
   }
 }
 

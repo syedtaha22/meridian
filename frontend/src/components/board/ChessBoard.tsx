@@ -32,11 +32,13 @@ export function ChessBoard({ apiBaseUrl }: ChessBoardProps) {
   const [showMoveHints, setShowMoveHints] = useState(true)
   const [showAiHints, setShowAiHints] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [latencyHistory, setLatencyHistory] = useState<number[]>([])
+  const [searchHistory, setSearchHistory] = useState<number[]>([])
+  const [roundTripHistory, setRoundTripHistory] = useState<number[]>([])
   const [evaluationHistory, setEvaluationHistory] = useState<number[]>([])
 
   const clearHistory = useCallback(() => {
-    setLatencyHistory([])
+    setSearchHistory([])
+    setRoundTripHistory([])
     setEvaluationHistory([])
   }, [])
 
@@ -49,7 +51,8 @@ export function ChessBoard({ apiBaseUrl }: ChessBoardProps) {
   // and a new reference would send the request again on every render.
   const recordSearch = useCallback(
     (result: AiMove) => {
-      setLatencyHistory((prev) => [...prev, result.elapsedMs])
+      setSearchHistory((prev) => [...prev, result.elapsedMs])
+      setRoundTripHistory((prev) => [...prev, result.roundTripMs])
       // The engine's score is from its own side to move; the chart is
       // always from White's side so the line reads identically either way.
       const pawns = scoreToPawns(result.score)
@@ -106,9 +109,10 @@ export function ChessBoard({ apiBaseUrl }: ChessBoardProps) {
           <div>
             <h3>Response time</h3>
             <p className="chess-muted">
-              How long each of the engine&apos;s searches took, move by move.
+              The left axis is the time of each search on the server. The right axis is the time
+              from sending the request to receiving the reply, which includes the network.
             </p>
-            <TimingChart history={latencyHistory} />
+            <TimingChart searchHistory={searchHistory} roundTripHistory={roundTripHistory} />
           </div>
           <div>
             <h3>Evaluation</h3>
