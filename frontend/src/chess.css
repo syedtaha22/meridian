@@ -143,6 +143,8 @@ html[data-theme='dark'] {
   --chess-border: 0px;
   --chess-shadow: 0.28;
   --chess-radius: 0px;
+  /* The squares that the picked-up piece can reach take the accent color of the host. */
+  --chess-hint: color-mix(in srgb, var(--accent, #24406f) 32%, transparent);
 
   position: relative;
   width: 100%;

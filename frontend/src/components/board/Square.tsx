@@ -57,12 +57,12 @@ interface SquareProps {
   onClick: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
-// The tiles come from the stylesheet. The highlights are yellow for the last move and red for
-// the squares the picked-up piece can reach.
+// The tiles come from the stylesheet. The highlights are yellow for the last move and the accent
+// color of the host for the squares the picked-up piece can reach.
 const LIGHT_SQUARE = 'var(--chess-light)'
 const DARK_SQUARE = 'var(--chess-dark)'
 const LAST_MOVE = 'rgba(255, 255, 0, 0.25)'
-const LEGAL_MOVE = 'rgba(255, 0, 0, 0.25)'
+const LEGAL_MOVE = 'var(--chess-hint)'
 
 const KINDS: Record<string, string> = {
   p: 'pawn',
