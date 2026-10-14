@@ -38,9 +38,9 @@
 #include <thread>
 
 #include "../bench/common.hpp"
-#include "chess/book.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
+#include "book.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 #include "sprt.hpp"
 
 namespace {

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "chess/position.hpp"
+#include "position.hpp"
 
 namespace chess {
 

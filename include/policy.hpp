@@ -1,9 +1,9 @@
 #pragma once
 
-#include "chess/attacks.hpp"
-#include "chess/position.hpp"
-#include "chess/see.hpp"
-#include "chess/types.hpp"
+#include "attacks.hpp"
+#include "position.hpp"
+#include "see.hpp"
+#include "types.hpp"
 
 namespace chess::policy {
 

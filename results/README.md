@@ -109,7 +109,7 @@ the ratio to step 08 was checked in one interleaved run of `bench_search`.
   reduction, singular extensions and the window sized by variance. The last one scored 0.511
   with 9% fewer positions, and it missed one of the mate puzzles.
 - Two threads on one table (Lazy SMP) score 59% of the points against one thread at the same
-  time per move. It is off by default, because the server runs four requests on two vCPUs.
+  time per move. It is off by default, and the `Threads` option of the UCI program turns it on.
 - Tuning the numbers with SPSA (120 iterations) moved four of five parameters by less than 7%,
   and the tuned engine scored 0.506 over 3,000 games, which is not a difference.
 - A build for CPUs with BMI2 finds slider attacks with PEXT and searches 5% to 12% more

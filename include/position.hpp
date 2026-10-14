@@ -5,8 +5,8 @@
 #include <string>
 #include <string_view>
 
-#include "chess/attacks.hpp"
-#include "chess/types.hpp"
+#include "attacks.hpp"
+#include "types.hpp"
 
 namespace chess {
 

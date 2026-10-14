@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "chess/attacks.hpp"
-#include "chess/movegen.hpp"
+#include "attacks.hpp"
 #include "common.hpp"
+#include "movegen.hpp"
 
 namespace {
 

@@ -10,8 +10,8 @@
 #include <memory>
 
 #include "../bench/common.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 int main(int argc, char **argv) {
     using namespace chess;

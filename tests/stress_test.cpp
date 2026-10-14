@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "chess/eval.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
+#include "eval.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 namespace {
 

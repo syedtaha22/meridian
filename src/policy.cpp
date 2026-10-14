@@ -1,9 +1,9 @@
-#include "chess/policy.hpp"
+#include "policy.hpp"
 
 namespace chess::policy {
 
     const int kWeights[kFeatures] = {
-#include "chess/policy_weights.inc"
+#include "policy_weights.inc"
     };
 
 }  // namespace chess::policy

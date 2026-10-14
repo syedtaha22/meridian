@@ -1,9 +1,9 @@
-#include "chess/see.hpp"
+#include "see.hpp"
 
 #include <algorithm>
 
-#include "chess/attacks.hpp"
-#include "chess/eval.hpp"
+#include "attacks.hpp"
+#include "eval.hpp"
 
 namespace chess {
 

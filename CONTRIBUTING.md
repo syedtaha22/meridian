@@ -10,31 +10,27 @@ to build and test it, and what a change should include.
 ├── .github            # CI, issue and pull request templates
 ├── bench              # benchmark programs and position suites
 ├── book               # the whitelist of the opening book
-├── include
-│   └── chess          # public headers
+├── include            # headers
 ├── results            # recorded benchmark and match results
 ├── scripts            # experiments and reports
-├── server             # the HTTP service
-├── src                # the engine library
-├── tests              # perft, mate puzzles, API and search tests
-├── tools              # matches, tuning, tree drawings
-├── tree-examples      # search trees as SVG
+├── src                # the engine library and the UCI program
+├── tests              # perft, mate puzzles, time management, UCI and search tests
+├── tools              # matches, tuning, training
 ├── CMakeLists.txt     # the build
 ├── CONTRIBUTING.md
-├── Dockerfile         # the image of the HTTP service
-├── ENGINE.md          # the code, the API and how to run the benchmarks
+├── ENGINE.md          # the code, the UCI program and how to run the benchmarks
 ├── LICENSE
 ├── README.md          # where the project started and where it stands
 ├── SECURITY.md
 └── VERSIONING.md      # what changes the version of the engine
 ```
 
-The code, the API and the benchmarks are described in [ENGINE.md](ENGINE.md).
+The code, the UCI program and the benchmarks are described in [ENGINE.md](ENGINE.md).
 
 ## Build and test
 
-Requirements: a C++20 compiler and CMake 3.20 or newer. CMake fetches the dependencies of the
-server and the tools.
+Requirements: a C++20 compiler and CMake 3.20 or newer. CMake fetches the one dependency of the
+tools.
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -78,13 +74,13 @@ not replace the existing baselines.
 
 - A pull request should contain one change, describe what it does and why, and link the issue
   it closes.
-- CI should pass: the build and tests, the sanitizer run, and the container build.
-- The README, the API description and the benchmark tables should be updated when the change
+- CI should pass: the build and tests, and the sanitizer run.
+- The README, the UCI description and the benchmark tables should be updated when the change
   affects them.
 
 ## Reporting problems
 
 Issues should use the templates. A bug report should include the FEN of the position, the
-moves played, the request and the response when it concerns the server, and the engine
-version from `GET /health`. Security problems should be reported as described in
+moves played, the UCI commands and the replies when it concerns the UCI program, and the
+engine version from the `id name` line. Security problems should be reported as described in
 [SECURITY.md](SECURITY.md).

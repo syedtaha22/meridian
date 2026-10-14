@@ -1,4 +1,4 @@
-#include "chess/movegen.hpp"
+#include "movegen.hpp"
 
 namespace chess {
 

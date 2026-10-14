@@ -1,11 +1,11 @@
-#include "chess/eval.hpp"
+#include "eval.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 
-#include "chess/attacks.hpp"
+#include "attacks.hpp"
 
 namespace chess {
 
@@ -366,7 +366,7 @@ namespace chess {
 
     namespace {
 
-#include "chess/eval_defaults.inc"
+#include "eval_defaults.inc"
 
         template <size_t N> void fill(int *destination, const int (&source)[N]) {
             std::copy(source, source + N, destination);

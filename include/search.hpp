@@ -2,15 +2,16 @@
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "chess/eval.hpp"
-#include "chess/position.hpp"
-#include "chess/tt.hpp"
-#include "chess/types.hpp"
+#include "eval.hpp"
+#include "position.hpp"
+#include "tt.hpp"
+#include "types.hpp"
 
 namespace chess {
 
@@ -28,8 +29,15 @@ namespace chess {
     struct SearchOptions {
         int max_depth = 6;          ///< Nominal depth in plies.
         int64_t time_limit_ms = 0;  ///< Wall clock budget; 0 means no limit.
-        uint64_t node_limit = 0;    ///< Node budget; 0 means no limit.
-        size_t hash_mb = 16;        ///< Transposition table size.
+
+        /**
+         * Time after which no new iteration starts, in milliseconds; 0 means no limit. Each
+         * finished iteration compares the elapsed time with a fraction of this value, smaller
+         * when the best move has stayed the same. `time_limit_ms` remains the hard limit.
+         */
+        int64_t soft_time_limit_ms = 0;
+        uint64_t node_limit = 0;  ///< Node budget; 0 means no limit.
+        size_t hash_mb = 16;      ///< Transposition table size.
 
         bool move_ordering = true;        ///< Try captures by MVV-LVA before quiet moves.
         bool killers_history = true;      ///< Order quiet moves by killer and history scores.
@@ -79,21 +87,22 @@ namespace chess {
         int futility_step = 214;
         int razor_base = 350;  ///< Razoring margin at depth 1, plus `razor_step` each ply.
         int razor_step = 150;
-        int delta_margin = 200;      ///< Value added to a victim in delta pruning.
-        int lmp_base = 3;            ///< Late move pruning count: base + depth squared.
-        int lmr_scale = 225;         ///< Divisor of the reduction table, in hundredths.
-        int iir_depth = 6;           ///< Smallest depth of the internal iterative reduction.
-        int null_margin_step = 246;  ///< Margin over beta that adds one ply to the null move.
-        int aspiration_delta = 18;   ///< Half width of the first aspiration window.
-        int singular_depth = 8;      ///< Smallest depth of a singular extension search.
-        int threads = 1;             ///< Search threads that share the table.
-        int policy_scale = 16;       ///< Ordering score of one logit of the policy, in 1/64.
-        int killer_count = 2;        ///< Killer moves kept for each ply, 1 or 2.
-        int mvv_scale = 16;          ///< Ordering weight of the victim against the attacker.
-        int bad_capture_margin = 0;  ///< A capture is late when its exchange is below minus this.
-        int history_limit = 16384;   ///< Largest history score.
-        int history_bonus = 8;       ///< History change of a cutoff, per ply squared.
-        int malus_percent = 100;     ///< Malus of a failed move, in percent of the bonus.
+        int delta_margin = 200;        ///< Value added to a victim in delta pruning.
+        int lmp_base = 3;              ///< Late move pruning count: base + depth squared.
+        int lmr_scale = 225;           ///< Divisor of the reduction table, in hundredths.
+        int iir_depth = 6;             ///< Smallest depth of the internal iterative reduction.
+        int null_margin_step = 246;    ///< Margin over beta that adds one ply to the null move.
+        int aspiration_delta = 18;     ///< Half width of the first aspiration window.
+        int singular_depth = 8;        ///< Smallest depth of a singular extension search.
+        int threads = 1;               ///< Search threads that share the table.
+        std::vector<Move> root_moves;  ///< The moves the root is limited to; empty means all.
+        int policy_scale = 16;         ///< Ordering score of one logit of the policy, in 1/64.
+        int killer_count = 2;          ///< Killer moves kept for each ply, 1 or 2.
+        int mvv_scale = 16;            ///< Ordering weight of the victim against the attacker.
+        int bad_capture_margin = 0;    ///< A capture is late when its exchange is below minus this.
+        int history_limit = 16384;     ///< Largest history score.
+        int history_bonus = 8;         ///< History change of a cutoff, per ply squared.
+        int malus_percent = 100;       ///< Malus of a failed move, in percent of the bonus.
         int continuation_limit = 16000;  ///< Largest continuation score.
 
         /**
@@ -161,22 +170,14 @@ namespace chess {
     };
 
     /**
-     * One node of a recorded search tree.
+     * What the search knows after one finished iteration.
      */
-    struct TraceNode {
-        int parent = -1;  ///< Index of the parent in the trace, -1 for the root.
-        Move move;        ///< The move that led here from the parent.
-        int ply = 0;
-        int depth = 0;  ///< Remaining depth when the node was entered.
-        int alpha = 0;
-        int beta = 0;
-        int score = 0;        ///< Score returned to the parent, from this node's mover.
-        int moves_total = 0;  ///< Legal moves generated.
-        int moves_searched = 0;
-        bool cutoff = false;  ///< A move reached beta here.
-        bool quiescence = false;
-        bool from_tt = false;  ///< Answered by the transposition table.
-        bool null_move = false;
+    struct IterationInfo {
+        int depth = 0;
+        int score = 0;  ///< Centipawns for the side to move; mates near kMateScore.
+        uint64_t nodes = 0;
+        double elapsed_ms = 0;
+        std::vector<Move> pv;
     };
 
     /**
@@ -229,25 +230,22 @@ namespace chess {
         void clear();
 
         /**
-         * @brief Records the next searches into `sink`, or stops recording when null.
+         * @brief Calls `callback` after every finished iteration of the next searches.
          *
-         * Only nodes up to `max_ply` plies from the root are kept, and at most
-         * `max_nodes`, so that a deep search cannot exhaust memory.
+         * The call comes from the thread that runs `search`, and a search with helper threads
+         * reports the nodes of that thread only. An empty function turns the reports off.
          *
-         * @param sink Receives the nodes in the order they were entered.
-         * @param max_ply Deepest ply recorded.
-         * @param max_nodes Largest number of nodes recorded.
+         * @param callback Receives the iteration.
          */
-        void set_trace(std::vector<TraceNode> *sink, int max_ply, size_t max_nodes);
+        void set_info_callback(std::function<void(const IterationInfo &)> callback);
 
     private:
         SearchResult search_one(const Position &root, const std::vector<uint64_t> &history);
         void prepare_table();
         void clear_own_tables();
         int negamax(const Position &pos, int depth, int alpha, int beta, int ply, bool pv,
-                    bool allow_null, int trace_parent, Move trace_move);
-        int quiescence(const Position &pos, int alpha, int beta, int ply, int trace_parent,
-                       Move trace_move);
+                    bool allow_null, Move last_move);
+        int quiescence(const Position &pos, int alpha, int beta, int ply);
         int search_root(const Position &pos, int depth, int alpha, int beta);
         bool should_stop();
 
@@ -259,9 +257,6 @@ namespace chess {
         }
 
         bool is_repetition(const Position &pos) const;
-        int trace_enter(int parent, Move move, int ply, int depth, int alpha, int beta,
-                        bool quiescence, bool null_move);
-        void trace_leave(int id, int score, int total, int searched, bool cutoff, bool from_tt);
 
         SearchOptions options_;
         std::shared_ptr<TranspositionTable> tt_;
@@ -321,9 +316,7 @@ namespace chess {
         int root_best_score_ = 0;
         std::vector<Move> root_order_;
 
-        std::vector<TraceNode> *trace_ = nullptr;
-        int trace_max_ply_ = 0;
-        size_t trace_max_nodes_ = 0;
+        std::function<void(const IterationInfo &)> info_callback_;
     };
 
     /**

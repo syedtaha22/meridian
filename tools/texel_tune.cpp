@@ -23,7 +23,7 @@
 #include <thread>
 
 #include "../bench/common.hpp"
-#include "chess/eval.hpp"
+#include "eval.hpp"
 
 namespace {
 

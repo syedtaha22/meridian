@@ -1,4 +1,4 @@
-#include "chess/position.hpp"
+#include "position.hpp"
 
 #include <cctype>
 #include <sstream>

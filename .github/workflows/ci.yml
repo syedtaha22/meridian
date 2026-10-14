@@ -24,9 +24,3 @@ jobs:
       - run: cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCHESS_SANITIZE=ON
       - run: cmake --build build-asan -j 2
       - run: ctest --test-dir build-asan --output-on-failure
-
-  image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker build -t chess-backend .

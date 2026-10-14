@@ -3,10 +3,10 @@
 // The engine plays games from random openings with a fixed depth, and every position with its
 // chosen move is a sample. The policy is a log-linear model over the binary features of
 // `chess/policy.hpp`, trained to give the chosen move the highest probability among the legal
-// moves of the position. The weights are written as `include/chess/policy_weights.inc`.
+// moves of the position. The weights are written as `src/policy_weights.inc`.
 //
 // Usage: train_policy [--games 600] [--depth 6] [--config full+see] [--threads 12]
-//                     [--epochs 12] [--out include/chess/policy_weights.inc] [--seed 1]
+//                     [--epochs 12] [--out src/policy_weights.inc] [--seed 1]
 
 #include <atomic>
 #include <cmath>
@@ -17,9 +17,9 @@
 #include <thread>
 
 #include "../bench/common.hpp"
-#include "chess/movegen.hpp"
-#include "chess/policy.hpp"
-#include "chess/search.hpp"
+#include "movegen.hpp"
+#include "policy.hpp"
+#include "search.hpp"
 
 namespace {
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     const std::string config = args.get("config", "full+see");
     const int threads = std::max(1, args.get_int("threads", 12));
     const int epochs = args.get_int("epochs", 12);
-    const std::string path = args.get("out", "include/chess/policy_weights.inc");
+    const std::string path = args.get("out", "src/policy_weights.inc");
     const uint64_t seed = static_cast<uint64_t>(args.get_int("seed", 1));
 
     std::vector<Sample> samples;

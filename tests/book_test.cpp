@@ -3,8 +3,8 @@
 #include <set>
 #include <string>
 
-#include "chess/book.hpp"
-#include "chess/movegen.hpp"
+#include "book.hpp"
+#include "movegen.hpp"
 
 namespace {
 

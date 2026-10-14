@@ -4,7 +4,7 @@
 
 ## Area
 
-- [ ] Engine (search, evaluation, server, tools)
+- [ ] Engine (search, evaluation, UCI program, tools)
 - [ ] CI or documentation
 
 ## Checks

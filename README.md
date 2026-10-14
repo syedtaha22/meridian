@@ -1,4 +1,30 @@
-# Meridian
+<div align="center">
+
+  <a href="https://syedtaha22.github.io/meridian/">
+    <img src="assets/logo.svg#gh-light-mode-only" alt="Meridian" width="200">
+    <img src="assets/logo-dark.svg#gh-dark-mode-only" alt="Meridian" width="200">
+  </a>
+
+  A UCI chess engine in C++20.
+  <br>
+  <strong>[Explore Meridian docs »][docs-link]</strong>
+  <br>
+  <br>
+  [Report bug][issue-link]
+  ·
+  [Open a discussion][discussions-link]
+  ·
+  [Blog][blog-link]
+
+  [![Build][build-badge]][build-link]
+  [![License][license-badge]][license-link]
+  <br>
+  [![Release][release-badge]][release-link]
+  [![Commits][commits-badge]][commits-link]
+  <br>
+  [![Website][website-badge]][website-link]
+
+</div>
 
 Meridian is a chess engine written in C++. It is the rewrite of Horizon, a desktop game that was
 written for a university course project in 2024.
@@ -54,12 +80,6 @@ it tries the other moves in the order of the history heuristic and of a continua
 Captures that lose material come last. A history entry decays in proportion to its size, so that
 recent cutoffs count more than old ones.
 
-The engine can draw the search tree as an SVG image or as an interactive page. The image below
-shows the tree from the initial position at depth 5. More examples are in
-[tree-examples](tree-examples).
-
-![Search tree from the initial position](tree-examples/initial-position.svg)
-
 ### Evaluation
 
 The engine scores a position from material and from the placement of the pieces. Each piece has
@@ -75,7 +95,7 @@ engine with the term against the engine without it.
 
 ### Opening book
 
-The server plays its first moves from an opening book, so that games do not repeat. The book is
+The engine plays its first moves from an opening book, so that games do not repeat. The book is
 built by the engine itself: a tool searches the opening tree to depth 12 for both colours,
 keeps the moves that score close to the best, and writes them into the library. A move is chosen
 at random among the book moves of a position, weighted by score. The book has 39,586 moves for
@@ -175,34 +195,18 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-## Server
+## UCI engine
 
-The build also produces `chess_server`, a small HTTP server for the engine. It has two endpoints.
-`GET /health` returns the version and the limits. `POST /move` returns the move for a position.
-The request can set a depth limit and a time limit, and the server caps both. A request with
-`"book": false` skips the opening book.
-
-```bash
-build/chess_server        # listens on port 8080
-```
-
-The request asks for the best move from the starting position, searched to depth 6.
+The build produces `meridian`, the engine as a UCI program, for any chess program that speaks
+the protocol. It reads the clock of a game and keeps to it, and it has options for the hash
+size, the threads and the opening book.
 
 ```bash
-curl -s localhost:8080/move -H 'Content-Type: application/json' \
-  -d '{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-       "depth": 6, "book": false}'
+build/meridian               # reads UCI commands on standard input
+build/meridian bench         # nodes searched and speed on the built-in positions
 ```
 
-```json
-{"book":false,"depth":6,"elapsed_ms":2.937064,"move":"d2d4","nodes":13296,"score":{"cp":8,"mate":null}}
-```
-
-The reply gives the move d2d4 (the pawn from d2 to d4), a score of 8 centipawns, and the work
-done: 13,296 nodes in 2.9ms.
-
-The request and reply formats, the environment variables and the limits are in
-[ENGINE.md](ENGINE.md).
+The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 
 ## Structure
 
@@ -210,21 +214,20 @@ The request and reply formats, the environment variables and the limits are in
 .
 ├── bench           # benchmark programs and the positions they read
 ├── book            # the whitelist of the opening book
-├── include, src    # the engine library
-├── server          # the HTTP service
-├── tests           # perft, mate puzzles, API tests
-├── tools           # matches, tuning, tree drawings
+├── include         # headers
+├── src             # the engine library and the UCI program
+├── tests           # perft, mate puzzles, time management, UCI sessions
+├── tools           # matches, tuning, training
 ├── scripts         # experiments and reports
 ├── results         # recorded benchmark and match results
-├── tree-examples   # search trees as SVG
-├── ENGINE.md       # the code, the API and how to run the benchmarks
+├── ENGINE.md       # the code, the UCI program and how to run the benchmarks
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md       # This file
 └── SECURITY.md
 ```
 
-[ENGINE.md](ENGINE.md) describes the engine and its server.
+[ENGINE.md](ENGINE.md) describes the engine and the UCI program.
 
 ## Roadmap
 
@@ -252,7 +255,7 @@ causes the cutoff 94% of the time. The results of the 25 ideas that were tested 
 - SPSA tuning with more games. The 120 iterations of 48 games moved the margins of step 09 and
   gained 13 Elo, so a longer run may give more.
 - A build with PEXT lookups, which is 5% to 12% faster, for hosts known to have BMI2.
-- Syzygy endgame tablebases. The data files are larger than the memory of the service.
+- Syzygy endgame tablebases. The data files are large.
 
 ### Evaluation
 
@@ -286,3 +289,19 @@ describes how to report a security problem.
 ## License
 
 GPL-3.0-or-later, see [LICENSE](LICENSE).
+
+[blog-link]:          https://syedtaha22.github.io/blog/chess-bitboards-and-benchmarks/
+[build-link]:         https://github.com/syedtaha22/meridian/actions/workflows/ci.yml
+[commits-link]:       https://github.com/syedtaha22/meridian/commits/main
+[discussions-link]:   https://github.com/syedtaha22/meridian/discussions/new
+[docs-link]:          ENGINE.md
+[issue-link]:         https://github.com/syedtaha22/meridian/issues/new?template=bug_report.yml
+[license-link]:       LICENSE
+[release-link]:       https://github.com/syedtaha22/meridian/releases/latest
+[website-link]:       https://syedtaha22.github.io/meridian/
+
+[build-badge]:        https://img.shields.io/github/actions/workflow/status/syedtaha22/meridian/ci.yml?branch=main&style=for-the-badge&label=meridian&logo=github
+[commits-badge]:      https://img.shields.io/github/commits-since/syedtaha22/meridian/latest?style=for-the-badge
+[license-badge]:      https://img.shields.io/github/license/syedtaha22/meridian?style=for-the-badge&label=license&color=success
+[release-badge]:      https://img.shields.io/github/v/release/syedtaha22/meridian?style=for-the-badge&label=release
+[website-badge]:      https://img.shields.io/website?style=for-the-badge&down_color=red&down_message=Offline&label=website&up_color=success&up_message=Online&url=https%3A%2F%2Fsyedtaha22.github.io%2Fmeridian%2F

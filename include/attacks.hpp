@@ -4,7 +4,7 @@
 #include <immintrin.h>
 #endif
 
-#include "chess/types.hpp"
+#include "types.hpp"
 
 namespace chess {
 

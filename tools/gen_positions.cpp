@@ -17,8 +17,8 @@
 #include <thread>
 
 #include "../bench/common.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 namespace {
 

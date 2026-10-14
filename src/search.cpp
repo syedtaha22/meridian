@@ -1,4 +1,4 @@
-#include "chess/search.hpp"
+#include "search.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -8,14 +8,36 @@
 #include <thread>
 #include <vector>
 
-#include "chess/eval.hpp"
-#include "chess/movegen.hpp"
-#include "chess/policy.hpp"
-#include "chess/see.hpp"
+#include "eval.hpp"
+#include "movegen.hpp"
+#include "policy.hpp"
+#include "see.hpp"
 
 namespace chess {
 
     namespace {
+
+        /**
+         * Keeps the moves of `list` that are in `allowed`. An empty `allowed`, or one that matches
+         * no move, leaves the list as it is.
+         */
+        void restrict_moves(MoveList &list, const std::vector<Move> &allowed) {
+            if (allowed.empty()) {
+                return;
+            }
+
+            MoveList kept;
+
+            for (const Move move : list) {
+                if (std::find(allowed.begin(), allowed.end(), move) != allowed.end()) {
+                    kept.add(move);
+                }
+            }
+
+            if (!kept.empty()) {
+                list = kept;
+            }
+        }
 
         int64_t now_ns() {
             return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -356,46 +378,8 @@ namespace chess {
         root_scores_.clear();
     }
 
-    void Searcher::set_trace(std::vector<TraceNode> *sink, int max_ply, size_t max_nodes) {
-        trace_ = sink;
-        trace_max_ply_ = max_ply;
-        trace_max_nodes_ = max_nodes;
-    }
-
-    int Searcher::trace_enter(int parent, Move move, int ply, int depth, int alpha, int beta,
-                              bool quiescence, bool null_move) {
-        if (trace_ == nullptr || ply > trace_max_ply_ || trace_->size() >= trace_max_nodes_) {
-            return -1;
-        }
-
-        TraceNode node;
-        node.parent = parent;
-        node.move = move;
-        node.ply = ply;
-
-        node.depth = depth;
-        node.alpha = alpha;
-        node.beta = beta;
-
-        node.quiescence = quiescence;
-        node.null_move = null_move;
-        trace_->push_back(node);
-
-        return static_cast<int>(trace_->size()) - 1;
-    }
-
-    void Searcher::trace_leave(int id, int score, int total, int searched, bool cutoff,
-                               bool from_tt) {
-        if (id < 0) {
-            return;
-        }
-
-        TraceNode &node = (*trace_)[id];
-        node.score = score;
-        node.moves_total = total;
-        node.moves_searched = searched;
-        node.cutoff = cutoff;
-        node.from_tt = from_tt;
+    void Searcher::set_info_callback(std::function<void(const IterationInfo &)> callback) {
+        info_callback_ = std::move(callback);
     }
 
     bool Searcher::should_stop() {
@@ -520,6 +504,7 @@ namespace chess {
 
         MoveList legal;
         generate_legal(root, legal);
+        restrict_moves(legal, options_.root_moves);
 
         if (legal.empty()) {
             result.score = root.in_check() ? -kMateScore : 0;
@@ -534,6 +519,11 @@ namespace chess {
         root_order_.clear();
         root_best_ = Move();
 
+        // The best move of the last iteration and the number of iterations that kept it, for the
+        // soft time limit.
+        Move previous_best;
+        int stable = 0;
+
         for (int depth = first_depth; depth <= max_depth; ++depth) {
             // Helpers skip some depths, so that the threads do not repeat each other.
             if (helper_id_ > 0 && depth > 3 && (depth + helper_id_) % (helper_id_ + 2) == 0) {
@@ -543,9 +533,6 @@ namespace chess {
             root_best_ = Move();
 
             // The recording describes the latest iteration only.
-            if (trace_ != nullptr) {
-                trace_->clear();
-            }
 
             int score = 0;
             int low = -kInfinity;
@@ -566,10 +553,6 @@ namespace chess {
 
             while (true) {
                 root_best_ = Move();
-
-                if (trace_ != nullptr) {
-                    trace_->clear();
-                }
 
                 score = search_root(root, depth, low, high);
 
@@ -609,6 +592,32 @@ namespace chess {
                 break;
             }
 
+            if (helper_id_ == 0) {
+                stable = result.best_move == previous_best ? stable + 1 : 0;
+                previous_best = result.best_move;
+
+                if (info_callback_) {
+                    IterationInfo info;
+                    info.depth = depth;
+                    info.score = score;
+                    info.nodes = stats_.nodes;
+                    info.elapsed_ms = (now_ns() - start_ns_) / 1e6;
+                    info.pv = result.pv;
+                    info_callback_(info);
+                }
+
+                // The next iteration takes two to three times as long as this one, so a share
+                // of the soft limit is the point to stop at. A move that stays best needs less.
+                if (options_.soft_time_limit_ms > 0) {
+                    const double elapsed_ms = (now_ns() - start_ns_) / 1e6;
+                    const double share = stable >= 4 ? 0.35 : (stable >= 2 ? 0.5 : 0.7);
+
+                    if (elapsed_ms >= static_cast<double>(options_.soft_time_limit_ms) * share) {
+                        break;
+                    }
+                }
+            }
+
             // Stop deepening once a forced mate is found and cannot be improved on.
             if (std::abs(score) >= kMateBound && depth >= (kMateScore - std::abs(score)) + 1) {
                 break;
@@ -626,11 +635,11 @@ namespace chess {
     }
 
     int Searcher::search_root(const Position &pos, int depth, int alpha, int beta) {
-        const int trace_id = trace_enter(-1, Move(), 0, depth, alpha, beta, false, false);
         pv_length_[0] = 0;
 
         MoveList list;
         generate_pseudo_legal(pos, list);
+        restrict_moves(list, options_.root_moves);
 
         // Order: previous best first (iterative deepening), then the ordering by score.
         int scores[kMaxMoves];
@@ -713,7 +722,7 @@ namespace chess {
             int score;
 
             if (searched == 0 || !options_.pvs) {
-                score = -negamax(next, depth - 1, -beta, -alpha, 1, true, true, trace_id, move);
+                score = -negamax(next, depth - 1, -beta, -alpha, 1, true, true, move);
             } else {
                 int root_reduction = 0;
 
@@ -726,14 +735,13 @@ namespace chess {
                 }
 
                 score = -negamax(next, depth - 1 - root_reduction, -alpha - 1, -alpha, 1, false,
-                                 true, trace_id, move);
+                                 true, move);
 
                 if (score > alpha && root_reduction > 0 && !aborted_) {
-                    score = -negamax(next, depth - 1, -alpha - 1, -alpha, 1, false, true, trace_id,
-                                     move);
+                    score = -negamax(next, depth - 1, -alpha - 1, -alpha, 1, false, true, move);
                 }
                 if (score > alpha && !aborted_) {
-                    score = -negamax(next, depth - 1, -beta, -alpha, 1, true, true, trace_id, move);
+                    score = -negamax(next, depth - 1, -beta, -alpha, 1, true, true, move);
                 }
             }
 
@@ -773,12 +781,11 @@ namespace chess {
             root_best_ = list[0];
         }
 
-        trace_leave(trace_id, best, list.size(), searched, false, false);
         return best;
     }
 
     int Searcher::negamax(const Position &pos, int depth, int alpha, int beta, int ply, bool pv,
-                          bool allow_null, int trace_parent, Move trace_move) {
+                          bool allow_null, Move last_move) {
         pv_length_[ply] = 0;
 
         if (should_stop()) {
@@ -792,29 +799,23 @@ namespace chess {
         }
         if (depth <= 0) {
             if (options_.quiescence) {
-                return quiescence(pos, alpha, beta, ply, trace_parent, trace_move);
+                return quiescence(pos, alpha, beta, ply);
             }
 
             ++stats_.nodes;
-            const int id = trace_enter(trace_parent, trace_move, ply, 0, alpha, beta, false, false);
             const int value = static_evaluation(pos);
-            trace_leave(id, value, 0, 0, false, false);
 
             return value;
         }
 
         ++stats_.nodes;
-        const int trace_id = trace_enter(trace_parent, trace_move, ply, depth, alpha, beta, false,
-                                         trace_move.is_null() && trace_parent >= 0);
 
         // Draws that do not depend on the moves left to play.
         if (pos.halfmove_clock() >= 100 || pos.insufficient_material() || is_repetition(pos)) {
-            trace_leave(trace_id, 0, 0, 0, false, false);
             return 0;
         }
         if (ply >= kMaxPly - 2) {
             const int value = static_evaluation(pos);
-            trace_leave(trace_id, value, 0, 0, false, false);
             return value;
         }
 
@@ -844,7 +845,6 @@ namespace chess {
                         (entry->bound == kBoundLower && score >= beta) ||
                         (entry->bound == kBoundUpper && score <= alpha)) {
                         ++stats_.tt_cutoffs;
-                        trace_leave(trace_id, score, 0, 0, false, true);
 
                         return score;
                     }
@@ -870,13 +870,12 @@ namespace chess {
         // Razoring: far below alpha at the last plies, quiescence decides.
         if (options_.razoring && quiet_node && depth <= 3 &&
             eval() + options_.razor_base + options_.razor_step * (depth - 1) < alpha) {
-            const int value = quiescence(pos, alpha, beta, ply, trace_id, Move());
+            const int value = quiescence(pos, alpha, beta, ply);
 
             if (aborted_) {
                 return 0;
             }
             if (value <= alpha) {
-                trace_leave(trace_id, value, 0, 0, false, false);
                 return value;
             }
         }
@@ -885,7 +884,6 @@ namespace chess {
         if (options_.reverse_futility && quiet_node && depth <= 4 && pos.has_non_pawn_material() &&
             eval() - options_.rfp_margin * depth >= beta) {
             const int value = eval() - options_.rfp_margin * depth;
-            trace_leave(trace_id, value, 0, 0, true, false);
             return value;
         }
 
@@ -930,7 +928,7 @@ namespace chess {
             }
 
             const int score = -negamax(next, depth - 1 - reduction, -beta, -beta + 1, ply + 1,
-                                       false, false, trace_id, Move());
+                                       false, false, Move());
             keys_.pop_back();
 
             if (aborted_) {
@@ -938,7 +936,6 @@ namespace chess {
             }
             if (score >= beta) {
                 ++stats_.null_cutoffs;
-                trace_leave(trace_id, beta, 0, 0, true, false);
                 return beta;
             }
         }
@@ -952,8 +949,8 @@ namespace chess {
             (tt_bound == kBoundLower || tt_bound == kBoundExact) && tt_depth >= depth - 3) {
             const int target = tt_score - 2 * depth;
             excluded_[ply] = tt_move;
-            const int value = negamax(pos, (depth - 1) / 2, target - 1, target, ply, false, false,
-                                      trace_id, Move());
+            const int value =
+                negamax(pos, (depth - 1) / 2, target - 1, target, ply, false, false, Move());
             excluded_[ply] = Move();
 
             if (aborted_) {
@@ -970,15 +967,14 @@ namespace chess {
         const Color us = pos.side_to_move();
 
         // The previous move, for the counter move and the continuation scores.
-        const bool has_previous = options_.counter_history && !trace_move.is_null();
+        const bool has_previous = options_.counter_history && !last_move.is_null();
         const int previous =
-            has_previous ? pos.piece_on(trace_move.to()) * kSquares + trace_move.to() : 0;
+            has_previous ? pos.piece_on(last_move.to()) * kSquares + last_move.to() : 0;
 
         // The piece and destination of the move that led here, by ply, for the two-ply table.
         if (options_.continuation2) {
-            stack_[ply] = trace_move.is_null()
-                              ? -1
-                              : pos.piece_on(trace_move.to()) * kSquares + trace_move.to();
+            stack_[ply] =
+                last_move.is_null() ? -1 : pos.piece_on(last_move.to()) * kSquares + last_move.to();
         }
 
         const int history_limit = options_.history_limit;
@@ -1057,7 +1053,6 @@ namespace chess {
         Move best_move;
         int legal_moves = 0;
         int searched = 0;
-        bool cutoff = false;
 
         // Moves searched without a cutoff, to lower their scores when a later move cuts.
         Move tried_quiets[64];
@@ -1121,7 +1116,7 @@ namespace chess {
 
             if (searched == 0 || !options_.pvs) {
                 score = -negamax(next, depth - 1 + move_extension, -beta, -alpha, ply + 1, pv, true,
-                                 trace_id, move);
+                                 move);
             } else {
                 int reduction = 0;
 
@@ -1151,16 +1146,16 @@ namespace chess {
                 }
 
                 score = -negamax(next, depth - 1 - reduction + move_extension, -alpha - 1, -alpha,
-                                 ply + 1, false, true, trace_id, move);
+                                 ply + 1, false, true, move);
                 if (score > alpha && reduction > 0 && !aborted_) {
                     ++stats_.re_searches;
                     score = -negamax(next, depth - 1 + move_extension, -alpha - 1, -alpha, ply + 1,
-                                     false, true, trace_id, move);
+                                     false, true, move);
                 }
                 if (score > alpha && score < beta && !aborted_) {
                     ++stats_.re_searches;
                     score = -negamax(next, depth - 1 + move_extension, -beta, -alpha, ply + 1, true,
-                                     true, trace_id, move);
+                                     true, move);
                 }
             }
 
@@ -1187,7 +1182,6 @@ namespace chess {
                     pv_length_[ply] = child_length + 1;
 
                     if (alpha >= beta) {
-                        cutoff = true;
                         ++stats_.beta_cutoffs;
 
                         if (searched == 1) {
@@ -1288,7 +1282,6 @@ namespace chess {
         }
 
         if (!excluded.is_null() && legal_moves == 0) {
-            trace_leave(trace_id, alpha, 0, 0, false, false);
             return alpha;
         }
 
@@ -1303,24 +1296,19 @@ namespace chess {
             tt_->store(pos.key(), best_move, to_tt_score(best, ply), depth, bound);
         }
 
-        trace_leave(trace_id, best, list.size(), searched, cutoff, false);
         return best;
     }
 
-    int Searcher::quiescence(const Position &pos, int alpha, int beta, int ply, int trace_parent,
-                             Move trace_move) {
+    int Searcher::quiescence(const Position &pos, int alpha, int beta, int ply) {
         if (should_stop()) {
             return 0;
         }
 
         ++stats_.nodes;
         ++stats_.quiescence_nodes;
-        const int trace_id =
-            trace_enter(trace_parent, trace_move, ply, 0, alpha, beta, true, false);
 
         if (ply >= kMaxPly - 2) {
             const int value = static_evaluation(pos);
-            trace_leave(trace_id, value, 0, 0, false, false);
             return value;
         }
 
@@ -1331,7 +1319,6 @@ namespace chess {
             best = static_evaluation(pos);
 
             if (best >= beta) {
-                trace_leave(trace_id, best, 0, 0, true, false);
                 return best;
             }
 
@@ -1355,7 +1342,6 @@ namespace chess {
 
         int legal_moves = 0;
         int searched = 0;
-        bool cutoff = false;
 
         for (int i = 0; i < list.size(); ++i) {
             int pick = i;
@@ -1391,7 +1377,7 @@ namespace chess {
             ++legal_moves;
             ++searched;
             keys_.push_back(next.key());
-            const int score = -quiescence(next, -beta, -alpha, ply + 1, trace_id, list[i]);
+            const int score = -quiescence(next, -beta, -alpha, ply + 1);
             keys_.pop_back();
 
             if (aborted_) {
@@ -1404,7 +1390,6 @@ namespace chess {
                     alpha = score;
 
                     if (alpha >= beta) {
-                        cutoff = true;
                         break;
                     }
                 }
@@ -1415,7 +1400,6 @@ namespace chess {
             best = -(kMateScore - ply);
         }
 
-        trace_leave(trace_id, best, list.size(), searched, cutoff, false);
         return best;
     }
 

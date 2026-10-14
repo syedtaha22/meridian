@@ -1,4 +1,4 @@
-#include "chess/attacks.hpp"
+#include "attacks.hpp"
 
 #ifdef CHESS_PEXT
 #include <immintrin.h>

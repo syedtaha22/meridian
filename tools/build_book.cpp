@@ -1,6 +1,6 @@
 // Builds the opening book by searching the opening tree.
 //
-// Usage: build_book [--out include/chess/book_data.inc] [--whitelist book/whitelist.txt]
+// Usage: build_book [--out src/book_data.inc] [--whitelist book/whitelist.txt]
 //                   [--depth 12] [--plies 10] [--own-width 3] [--own-margin 15]
 //                   [--reply-width 4] [--reply-margin 30] [--max-eval 60]
 //                   [--threads 8] [--hash 32]
@@ -27,9 +27,9 @@
 #include <vector>
 
 #include "../bench/common.hpp"
-#include "chess/book.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
+#include "book.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 namespace {
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
     settings.threads = args.get_int("threads", settings.threads);
     settings.hash_mb =
         static_cast<size_t>(args.get_int("hash", static_cast<int>(settings.hash_mb)));
-    const std::string out_path = args.get("out", "include/chess/book_data.inc");
+    const std::string out_path = args.get("out", "src/book_data.inc");
     const Whitelist whitelist = read_whitelist(args.get("whitelist", "book/whitelist.txt"));
 
     // Entries by position, each with the weights found for it.

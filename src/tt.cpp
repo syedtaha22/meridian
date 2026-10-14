@@ -1,4 +1,4 @@
-#include "chess/tt.hpp"
+#include "tt.hpp"
 
 #include <algorithm>
 

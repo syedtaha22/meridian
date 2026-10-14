@@ -1,5 +1,5 @@
 name: Feature request
-description: A change to the engine, the server or the board.
+description: A change to the engine or its tools.
 labels: [enhancement]
 body:
   - type: textarea

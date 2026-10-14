@@ -39,13 +39,29 @@
 #include <thread>
 
 #include "../bench/common.hpp"
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
-#include "tree_common.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 namespace {
 
     using namespace chess;
+
+    /**
+     * Splits "a,b,c" into its parts, dropping empty ones.
+     */
+    std::vector<std::string> split(const std::string &text, char separator) {
+        std::vector<std::string> parts;
+        std::string part;
+        std::istringstream in(text);
+
+        while (std::getline(in, part, separator)) {
+            if (!part.empty()) {
+                parts.push_back(part);
+            }
+        }
+
+        return parts;
+    }
 
     /**
      * An engine in a child process, spoken to over pipes in UCI.
@@ -151,7 +167,7 @@ namespace {
 
             for (const std::string &line : read_until("uciok")) {
                 if (line.find("option name UCI_Elo ") != std::string::npos) {
-                    const auto fields = tree::split(line, ' ');
+                    const auto fields = split(line, ' ');
 
                     for (size_t i = 0; i + 1 < fields.size(); ++i) {
                         if (fields[i] == "min") {
@@ -202,7 +218,7 @@ namespace {
             send(position_command);
             send(go);
             const auto lines = read_until("bestmove");
-            const auto fields = tree::split(lines.back(), ' ');
+            const auto fields = split(lines.back(), ' ');
 
             return fields.size() > 1 ? fields[1] : "";
         }
@@ -536,7 +552,7 @@ int main(int argc, char **argv) {
     if (opponent_internal) {
         levels.push_back(Level{});
     } else {
-        for (const std::string &text : tree::split(args.get("elo", "1500,1800,2100"), ',')) {
+        for (const std::string &text : split(args.get("elo", "1500,1800,2100"), ',')) {
             Level level;
             level.elo = std::stoi(text);
 

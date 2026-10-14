@@ -1,5 +1,5 @@
 name: Bug report
-description: The engine, the server or the board does something wrong.
+description: The engine or a tool does something wrong.
 labels: [bug]
 body:
   - type: dropdown
@@ -8,8 +8,7 @@ body:
       label: Where does it happen?
       options:
         - Engine (a wrong or illegal move, a crash, a hang)
-        - Server (the HTTP API)
-        - Board (the web interface)
+        - UCI program (commands, options, time management)
         - Benchmarks or tools
     validations:
       required: true
@@ -26,18 +25,18 @@ body:
       description: The FEN the game started from and the UCI moves played since, for a position.
       placeholder: "fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1, moves: e2e4 e7e5"
   - type: textarea
-    id: request
+    id: session
     attributes:
-      label: Request and response
-      description: For a server problem, the JSON sent to the server and what came back.
-      render: json
+      label: UCI session
+      description: For a UCI problem, the commands sent and what came back.
+      render: text
   - type: input
     id: version
     attributes:
       label: Engine version and settings
-      description: The engine version from `GET /health`, and the depth and time limit used.
+      description: The version from the `id name` line, and the depth and time limit used.
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Operating system, compiler or browser, and how the engine was started.
+      description: Operating system, compiler, and how the engine was started.

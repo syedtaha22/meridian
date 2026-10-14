@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include "chess/eval.hpp"
-#include "chess/movegen.hpp"
-#include "chess/position.hpp"
-#include "chess/see.hpp"
+#include "eval.hpp"
+#include "movegen.hpp"
+#include "position.hpp"
+#include "see.hpp"
 
 namespace {
 

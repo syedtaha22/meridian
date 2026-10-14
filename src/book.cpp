@@ -1,14 +1,14 @@
-#include "chess/book.hpp"
+#include "book.hpp"
 
 #include <algorithm>
 
-#include "chess/movegen.hpp"
+#include "movegen.hpp"
 
 namespace chess {
 
     namespace {
 
-#include "chess/book_data.inc"
+#include "book_data.inc"
 
     }  // namespace
 

@@ -6,8 +6,6 @@ build-*/
 __pycache__/
 *.pyc
 
-.envrc
-
 # OS/editor
 .DS_Store
 *.swp

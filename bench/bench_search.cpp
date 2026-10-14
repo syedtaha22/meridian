@@ -19,9 +19,9 @@
 #include <tuple>
 #include <vector>
 
-#include "chess/movegen.hpp"
-#include "chess/search.hpp"
 #include "common.hpp"
+#include "movegen.hpp"
+#include "search.hpp"
 
 namespace {
 

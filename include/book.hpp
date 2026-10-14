@@ -5,8 +5,8 @@
 #include <optional>
 #include <span>
 
-#include "chess/position.hpp"
-#include "chess/types.hpp"
+#include "position.hpp"
+#include "types.hpp"
 
 namespace chess {
 

@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-#include "chess/eval.hpp"
 #include "common.hpp"
+#include "eval.hpp"
 
 int main(int argc, char **argv) {
     using namespace chess;

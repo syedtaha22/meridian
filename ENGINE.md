@@ -1,6 +1,6 @@
 # Meridian engine
 
-This page describes the code: the engine, its HTTP server, the tests and the benchmarks. The
+This page describes the code: the engine, the UCI program, the tests and the benchmarks. The
 [README](README.md) describes the engine and shows the main results.
 
 ## Layout
@@ -19,20 +19,20 @@ This page describes the code: the engine, its HTTP server, the tests and the ben
 │   └── bench_eval.cpp           # cost of one evaluation
 ├── book
 │   └── whitelist.txt            # the moves the book may use in the first positions
-├── include/chess
+├── include
 │   ├── types.hpp                # squares, pieces, moves
 │   ├── attacks.hpp              # attack tables
 │   ├── position.hpp             # board state, make move, hashing
 │   ├── movegen.hpp              # legal moves, perft, SAN
 │   ├── eval.hpp                 # the evaluation and its tunable numbers
-│   ├── eval_defaults.inc        # the tuned numbers, as texel_tune found them
 │   ├── see.hpp                  # static exchange evaluation of a capture
 │   ├── book.hpp                 # the opening book, looked up by position
-│   ├── book_data.inc            # moves written by build_book
 │   ├── policy.hpp               # move features and the learned policy score
-│   ├── policy_weights.inc       # weights written by train_policy
 │   ├── tt.hpp                   # transposition table, lockless, shared by threads
-│   └── search.hpp               # search options, presets, the searcher
+│   ├── timeman.hpp              # the budget of one move from the clock of a game
+│   ├── search.hpp               # search options, presets, the searcher
+│   ├── uci.hpp                  # the UCI protocol around the searcher
+│   └── version.hpp              # the version of the engine
 ├── results                      # recorded numbers, see results/README.md
 ├── scripts
 │   ├── benchmark.sh             # records one step under results/baselines
@@ -44,33 +44,33 @@ This page describes the code: the engine, its HTTP server, the tests and the ben
 │   ├── eval_ladder.py           # Texel tuning of the evaluation in stages, with a match each
 │   ├── report.py                # prints a table of the recorded results as Markdown
 │   └── rating_fit.py            # ratings fitted to the results of several matches
-├── server
-│   ├── api.cpp                  # request validation and replies
-│   ├── api.hpp
-│   └── main.cpp                 # the process: routes, environment, shutdown
 ├── src
+│   ├── main.cpp                 # the meridian program
+│   ├── uci.cpp                  # commands, options and output
+│   ├── bench_positions.inc      # the positions of the bench command
 │   ├── attacks.cpp              # magic bitboard generation and lookup
 │   ├── movegen.cpp
 │   ├── position.cpp
 │   ├── search.cpp
+│   ├── timeman.cpp
 │   ├── eval.cpp
+│   ├── eval_defaults.inc        # the tuned numbers, as texel_tune found them
 │   ├── see.cpp
 │   ├── book.cpp
+│   ├── book_data.inc            # moves written by build_book
 │   ├── policy.cpp
+│   ├── policy_weights.inc       # weights written by train_policy
 │   └── tt.cpp
 ├── tests
 │   ├── data                     # 1,404 mate-in-one, two and three puzzles
 │   ├── position_test.cpp        # rules, hashing, perft
 │   ├── search_test.cpp          # search behavior and mate puzzles
 │   ├── book_test.cpp            # book moves are legal, and games vary
+│   ├── timeman_test.cpp         # the time budget stays inside the clock
+│   ├── uci_test.cpp             # scripted UCI sessions
 │   ├── stress_test.cpp          # random games checked against the rules
-│   ├── sprt_test.cpp            # the sequential test, with simulated error rates
-│   └── api_test.cpp             # the HTTP service
+│   └── sprt_test.cpp            # the sequential test, with simulated error rates
 ├── tools
-│   ├── template
-│   │   └── tree.html            # the page of visualize_tree, as HTML, CSS and JavaScript
-│   ├── print_tree.cpp           # a search tree as text
-│   ├── visualize_tree.cpp       # a search tree as SVG and interactive HTML
 │   ├── play_match.cpp           # two configurations against each other, with a sequential test
 │   ├── sprt.hpp                 # the sequential probability ratio test on pairs of games
 │   ├── mate_check.cpp           # solves the mate puzzles with one preset
@@ -79,71 +79,59 @@ This page describes the code: the engine, its HTTP server, the tests and the ben
 │   ├── texel_tune.cpp           # tunes the evaluation numbers against the results
 │   ├── train_policy.cpp         # trains the move policy from self-play games
 │   └── uci_match.cpp            # a match against any UCI engine, with a rating estimate
-├── tree-examples                # search trees as SVG
-├── cloudbuild.yaml              # builds the image and deploys it
-├── CMakeLists.txt
-└── Dockerfile
+└── CMakeLists.txt
 ```
 
-## Endpoints
+## UCI engine
 
-### `GET /health`
+`meridian` speaks the UCI protocol on standard input and output, so that chess programs and
+rating list testers can run the engine.
 
-Reply: `{ "status": "ok", "engine_version": string, "architecture": string,
-"max_depth": number, "hash_mb": number }`
+```bash
+build/meridian               # reads UCI commands
+build/meridian bench         # searches the built-in positions to depth 10
+build/meridian bench 12
+build/meridian help          # the commands and the options
+build/meridian version
+```
 
-The version follows the rules in [VERSIONING.md](VERSIONING.md).
+It supports `uci`, `isready`, `ucinewgame`, `setoption`, `position` (`startpos` or `fen`, with
+`moves`), `go`, `stop`, `ponderhit`, `bench`, `help` and `quit`. A command that it does not know
+gets a reply that says so. `go` takes `wtime`, `btime`, `winc`, `binc`, `movestogo`, `movetime`,
+`depth`, `nodes`, `mate`, `searchmoves`, `infinite`, `ponder` and `perft`. Each finished iteration
+prints an `info` line with depth, score (centipawns, or moves to mate), nodes, speed, time and the
+line.
 
-### `POST /move`
+`go ponder` searches the position without a limit until `ponderhit`, which continues the search
+under the clock of the command, or until `stop`. `go perft N` prints the number of positions
+below each move and the total.
 
-Request: `{ "fen": string, "moves"?: string[], "depth"?: number, "time_limit_ms"?: number,
-"book"?: boolean }`
+| Option | Type | Default | Meaning |
+|:-------|:-----|:--------|:--------|
+| `Hash` | spin, 1 to 4096 | 64 | Transposition table size in MB. |
+| `Threads` | spin, 1 to 64 | 1 | Search threads on one table (Lazy SMP). |
+| `MoveOverhead` | spin, 0 to 5000 | 30 | Milliseconds kept back per move. |
+| `OwnBook` | check | false | Play moves of the opening book while the game is in it. |
+| `Ponder` | check | false | Offered so that a chess program may send `go ponder`. |
+| `Clear Hash` | button | | Forget the table. |
 
-Reply: `{ "move": string, "score": { "cp": number | null, "mate": number | null },
-"depth": number, "nodes": number, "elapsed_ms": number, "book": boolean }`
+**Time management.** With a clock, the budget of a move is a share of the time left, 1/30 of it
+when the moves to the next time control are not given, plus three quarters of the increment. A
+soft limit stops the search after an iteration when about 35% to 70% of it has gone, the smaller
+share when the best move has stayed the same. A hard limit, never above 80% of the time left
+after the move overhead, stops the search at once. With `movetime` the whole time is used. The
+rules are in [timeman.cpp](src/timeman.cpp).
 
-`fen` is the position the game started from. `moves` are the UCI moves played since then, such
-as `e2e4` or `e7e8q`. The server needs the move list, and not only the final board, to see
-repeated positions.
-
-`score` is from the point of view of the side to move. `cp` is in centipawns. `mate` is the
-number of moves to mate, and it is negative when the side to move is mated. Exactly one of the
-two is set.
-
-`book` turns the opening book on or off for the request, and the server's own setting applies
-when it is missing. A move from the book has `book` set to true, `nodes` 0, and the score and
-depth of the search that built the book. The book holds several moves for most positions and
-the reply picks one at random by weight, so the same request can give different moves.
-
-A request with malformed JSON gets status 400. A request gets status 422 with
-`{ "error": string }` if the position is invalid, a move in `moves` is illegal, a parameter is
-out of range, or the position has no legal move. A `time_limit_ms` of 0, or no `time_limit_ms`,
-means the server's own cap.
-
-The server reads these environment variables:
-
-- `PORT` (8080)
-- `CHESS_MAX_DEPTH` (12)
-- `CHESS_DEFAULT_DEPTH` (6)
-- `CHESS_MAX_TIME_MS` (10000)
-- `CHESS_HASH_MB` (64, per worker thread)
-- `CHESS_THREADS` (4)
-- `CHESS_BOOK` (1), 0 turns the opening book off for requests that do not ask for it
-- `CHESS_ALLOWED_ORIGIN` (`https://syedtaha22.github.io`), the one origin that browsers may call
-  the server from
-
-The depth limit caps what a request may ask for. The engine itself searches up to 128 plies.
+`bench` prints the nodes searched, which do not change between runs of a build, and the speed.
+The version in the `id name` line is the one in [version.hpp](include/version.hpp).
 
 ## Building
 
 ```bash
 cmake -S . -B build
 cmake --build build -j
-build/chess_server
+build/meridian
 ```
-
-CMake downloads two header-only libraries at pinned versions when they are not installed:
-cpp-httplib and nlohmann/json.
 
 Three options change the build:
 
@@ -166,30 +154,10 @@ ctest --test-dir build --output-on-failure
   configuration returns legal moves, and that move ordering and the hash table do not change the
   value of a search of fixed depth. It also checks the time and node limits, `stop()` from
   another thread, and repetitions.
-- [api_test](tests/api_test.cpp) checks request validation, the reply shape, and a request over
-  HTTP.
-
-## Inspecting a search
-
-```bash
-build/print_tree tree.txt --depth 4 --max-ply 3 --max-children 8
-build/visualize_tree tree --depth 5 --max-depth 3 --top-children 3   # tree.svg and tree.html
-```
-
-Both tools take `--fen`, `--moves e2e4,e7e5` and `--config`, which selects a search preset.
-
-[visualize_tree](tools/visualize_tree.cpp) draws each position as a card. A card shows a small
-board with the last move highlighted, the score from White's side, the depth, the number of
-moves searched out of those available, and badges for a beta cutoff, a hash table answer,
-quiescence and a null move. The border of the card has the color of the score. Each edge shows
-the move and the number of positions searched below it. The best line is orange. A dashed purple
-edge leads to a position that another path reached first. `--scale` sets the score in
-pawns at which the colors reach their strongest value.
-
-The HTML page also supports panning (drag), zooming (scroll), `F` to fit the whole tree and `G`
-to hide the grid. Hovering over a card shows a larger board and a table of every move tried
-there. A click pins the card. The path from the root to the card stays bright, and the rest of
-the tree dims. Examples are in [tree-examples](tree-examples).
+- [timeman_test](tests/timeman_test.cpp) checks that the budget of a move stays inside the clock
+  and follows the time, the increment and the moves to go.
+- [uci_test](tests/uci_test.cpp) runs scripted sessions: the handshake, the options, searches
+  with depth, node, move time and clock limits, a mate score, a stop, the book and bad input.
 
 ## Benchmarks
 
@@ -235,7 +203,7 @@ A preset name takes changes after it, joined with `+`: a switch (`tuned+razoring
 in `SearchOptions`, on if it won its match and off otherwise. The presets are `baseline`,
 `ordering`, `tt`, `quiescence`, `iterative`, `pruning`, `full` and `tuned`. Each preset is a
 step of [results](results/README.md): `full` is step 08, with the evaluation, margins and history
-that it had, and `tuned` is step 09, which is also what `SearchOptions` and the server default to.
+that it had, and `tuned` is step 09, which is also what `SearchOptions` defaults to.
 
 ```bash
 build/mate_check --config tuned+razoring
@@ -253,7 +221,7 @@ scripts/spsa.py --base tuned --iterations 120
   adds each change that passes to the base of the next one.
 - [spsa.py](scripts/spsa.py) tunes the numbers of the techniques in a base with short matches.
 - [train_policy](tools/train_policy.cpp) trains the move policy of the `policy` switch from games
-  of the engine against itself. It writes `include/chess/policy_weights.inc`.
+  of the engine against itself. It writes `src/policy_weights.inc`.
 
 `threads=2` (`tuned+threads=2`) lets two threads search one position into the shared table.
 
@@ -273,7 +241,7 @@ The matches use the clock, so the machine should be idle.
   `history_bonus`, `malus_percent` and `continuation_limit`.
 - [gen_positions](tools/gen_positions.cpp) plays the engine against itself and writes quiet
   positions with the result of their game.
-- [eval_ladder.py](scripts/eval_ladder.py) tunes `EvalParams` (`include/chess/eval.hpp`) in
+- [eval_ladder.py](scripts/eval_ladder.py) tunes `EvalParams` (`include/eval.hpp`) in
   stages with [texel_tune](tools/texel_tune.cpp) and plays each stage against the numbers before
   it. The numbers have a middlegame and an endgame value. The stages are the material and
   piece-square tables, then tempo and the bishop pair, passed pawns, doubled and isolated pawns,
@@ -289,9 +257,9 @@ The matches use the clock, so the machine should be idle.
 build/build_book --depth 12 --plies 10 --threads 24
 ```
 
-The book is a set of opening moves that the server plays while a game is in it, so that the
+The book is a set of opening moves that the engine plays while a game is in it, so that the
 engine does not play the same game every time. [build_book](tools/build_book.cpp) writes it as
-`include/chess/book_data.inc`, which the library compiles in.
+`src/book_data.inc`, which the library compiles in.
 
 The tool searches the opening tree once for each colour the engine can play:
 
