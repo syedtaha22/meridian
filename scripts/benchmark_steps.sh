@@ -22,12 +22,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-backend="$(cd "$(dirname "$0")/.." && pwd)"
-build="$backend/build-bench-OFF"
-cmake -S "$backend" -B "$build" -DCMAKE_BUILD_TYPE=Release -DCHESS_RAY_ATTACKS=OFF >/dev/null
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+build="$repo/build-bench-OFF"
+cmake -S "$repo" -B "$build" -DCMAKE_BUILD_TYPE=Release -DCHESS_RAY_ATTACKS=OFF >/dev/null
 cmake --build "$build" -j "$(nproc)" --target bench_search >/dev/null
 
-cd "$backend"
+cd "$repo"
 shallow="$(mktemp)"
 deep="$(mktemp)"
 trap 'rm -f "$shallow" "$deep"' EXIT
@@ -40,7 +40,7 @@ header="$(head -1 "$shallow")"
 file_rows() {
     local config="$1"
     local run="$2"
-    local out="$backend/results/baselines/$run/move_selection.csv"
+    local out="$repo/results/baselines/$run/move_selection.csv"
     mkdir -p "$(dirname "$out")"
     {
         echo "$header"

@@ -11,9 +11,9 @@ set -euo pipefail
 
 first_cpu="${1:-16}"
 threads="${2:-16}"
-backend="$(cd "$(dirname "$0")/.." && pwd)"
-build="$backend/build"
-out="$backend/results/matches"
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+build="$repo/build"
+out="$repo/results/matches"
 mkdir -p "$out"
 
 match() {

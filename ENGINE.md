@@ -1,13 +1,12 @@
-# Meridian backend
+# Meridian engine
 
-The backend holds the engine, its HTTP server, the tests and the benchmarks. The
-[top-level README](../README.md) describes the engine and shows the main results. This page
-describes the code.
+This page describes the code: the engine, its HTTP server, the tests and the benchmarks. The
+[README](README.md) describes the engine and shows the main results.
 
 ## Layout
 
 ```bash
-backend
+.
 ├── bench                        # benchmark programs and the positions they read
 │   ├── legacy
 │   │   ├── legacy_adapter.cpp   # runs the original engine on the benchmark suites

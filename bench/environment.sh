@@ -7,7 +7,7 @@
 set -euo pipefail
 
 cpu="${1:-8}"
-repo="$(cd "$(dirname "$0")/../.." && pwd)"
+repo="$(cd "$(dirname "$0")/.." && pwd)"
 
 read_file() { cat "$1" 2>/dev/null | tr -d '\n' || true; }
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
@@ -21,7 +21,7 @@ done
 interesting="[${interesting%, }]"
 
 compiler="$(${CXX:-g++} --version 2>/dev/null | head -1 || true)"
-cache="$repo/backend/build/CMakeCache.txt"
+cache="$repo/build/CMakeCache.txt"
 build_type=""
 cxx_flags=""
 if [ -f "$cache" ]; then

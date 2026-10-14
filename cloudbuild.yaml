@@ -4,7 +4,7 @@ steps:
       - build
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
-      - backend
+      - .
 
   - name: gcr.io/cloud-builders/docker
     args:

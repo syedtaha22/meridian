@@ -46,11 +46,11 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-backend="$(cd "$(dirname "$0")/.." && pwd)"
-build="${CHESS_BUILD:-$backend/build}"
-out="$backend/results/matches/search-experiments"
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+build="${CHESS_BUILD:-$repo/build}"
+out="$repo/results/matches/search-experiments"
 mkdir -p "$out"
-cd "$backend"
+cd "$repo"
 
 # The evaluation numbers of a file apply to both sides, to the puzzles and to the node counts.
 eval_check=()

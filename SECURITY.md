@@ -1,6 +1,6 @@
 # Security
 
-The engine is served over HTTP by the [server](backend/server). The server accepts JSON requests
+The engine is served over HTTP by the [server](server). The server accepts JSON requests
 and allows browsers to call it from one origin, the site that hosts the board. It validates each
 request and limits the depth, the time and the memory.
 

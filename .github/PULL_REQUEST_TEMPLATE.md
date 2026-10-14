@@ -4,13 +4,13 @@
 
 ## Area
 
-- [ ] Backend (engine, server, tools)
+- [ ] Engine (search, evaluation, server, tools)
 - [ ] CI or documentation
 
 ## Checks
 
-- [ ] `ctest` passes in a Release build (backend changes)
-- [ ] `ctest` passes under AddressSanitizer and UndefinedBehaviorSanitizer (backend changes)
+- [ ] `ctest` passes in a Release build (engine changes)
+- [ ] `ctest` passes under AddressSanitizer and UndefinedBehaviorSanitizer (engine changes)
 - [ ] Changed C++ files are formatted with `clang-format`
 - [ ] Documentation and tables affected by the change are updated
 

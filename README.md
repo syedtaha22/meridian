@@ -56,9 +56,9 @@ recent cutoffs count more than old ones.
 
 The engine can draw the search tree as an SVG image or as an interactive page. The image below
 shows the tree from the initial position at depth 5. More examples are in
-[backend/tree-examples](backend/tree-examples).
+[tree-examples](tree-examples).
 
-![Search tree from the initial position](backend/tree-examples/initial-position.svg)
+![Search tree from the initial position](tree-examples/initial-position.svg)
 
 ### Evaluation
 
@@ -101,7 +101,7 @@ technique, or one group of techniques, to the previous one.
 
 The benchmark runs on one pinned core of an i9-13900HX. The machine is otherwise idle. Node counts
 do not change between runs. The full tables, the method and the raw data are in
-[backend/results](backend/results/README.md).
+[results](results/README.md).
 
 The table shows the mean time per move at depth 3, 5 and 6. Step 00 is the original engine.
 
@@ -165,14 +165,14 @@ more selective, and its evaluation is a neural network.
 ### Building
 
 ```bash
-cmake -S backend -B backend/build
-cmake --build backend/build -j
+cmake -S . -B build
+cmake --build build -j
 ```
 
 ### Testing
 
 ```bash
-ctest --test-dir backend/build --output-on-failure
+ctest --test-dir build --output-on-failure
 ```
 
 ## Server
@@ -183,7 +183,7 @@ The request can set a depth limit and a time limit, and the server caps both. A 
 `"book": false` skips the opening book.
 
 ```bash
-backend/build/chess_server        # listens on port 8080
+build/chess_server        # listens on port 8080
 ```
 
 The request asks for the best move from the starting position, searched to depth 6.
@@ -202,28 +202,35 @@ The reply gives the move d2d4 (the pawn from d2 to d4), a score of 8 centipawns,
 done: 13,296 nodes in 2.9ms.
 
 The request and reply formats, the environment variables and the limits are in
-[backend/README.md](backend/README.md).
+[ENGINE.md](ENGINE.md).
 
 ## Structure
 
 ```bash
 .
-├── backend         # the engine, its server, tests and benchmarks
-│   ├── ...
-│   └── README.md
+├── bench           # benchmark programs and the positions they read
+├── book            # the whitelist of the opening book
+├── include, src    # the engine library
+├── server          # the HTTP service
+├── tests           # perft, mate puzzles, API tests
+├── tools           # matches, tuning, tree drawings
+├── scripts         # experiments and reports
+├── results         # recorded benchmark and match results
+├── tree-examples   # search trees as SVG
+├── ENGINE.md       # the code, the API and how to run the benchmarks
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md       # This file
 └── SECURITY.md
 ```
 
-[backend/README.md](backend/README.md) describes the engine and its server.
+[ENGINE.md](ENGINE.md) describes the engine and its server.
 
 ## Roadmap
 
 Quiescence search makes up 57% to 72% of all nodes at depths 5 to 10, and the first move tried
 causes the cutoff 94% of the time. The results of the 25 ideas that were tested are in
-[backend/results](backend/results/README.md). These remain open.
+[results](results/README.md). These remain open.
 
 ### Close to a gain
 
@@ -260,7 +267,7 @@ causes the cutoff 94% of the time. The results of the 25 ideas that were tested 
 
 The engine began as a Windows desktop game with a raylib interface. Its rules, search and
 evaluation were rewritten as a library, and the interface moved to the web.
-[backend/results](backend/results/README.md) records the speed and the rules correctness of the
+[results](results/README.md) records the speed and the rules correctness of the
 original engine next to every later step. The table shows the original engine:
 
 | Property of the original engine | Measured |

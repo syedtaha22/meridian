@@ -41,16 +41,16 @@ if [ -z "$depths" ]; then
     esac
 fi
 
-backend="$(cd "$(dirname "$0")/.." && pwd)"
-build="$backend/build-bench-$rays"
-out="$backend/results/baselines/$run_id"
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+build="$repo/build-bench-$rays"
+out="$repo/results/baselines/$run_id"
 mkdir -p "$out"
 
-cmake -S "$backend" -B "$build" -DCMAKE_BUILD_TYPE=Release -DCHESS_RAY_ATTACKS="$rays" >/dev/null
+cmake -S "$repo" -B "$build" -DCMAKE_BUILD_TYPE=Release -DCHESS_RAY_ATTACKS="$rays" >/dev/null
 cmake --build "$build" -j "$(nproc)" --target bench_rules bench_eval bench_search >/dev/null
 
-cd "$backend"
-"$backend/bench/environment.sh" "$cpu" >"$out/environment.json"
+cd "$repo"
+"$repo/bench/environment.sh" "$cpu" >"$out/environment.json"
 "$build/bench_rules" --cpu "$cpu" --out "$out/rules.json"
 "$build/bench_eval" --cpu "$cpu" --out "$out/eval.json"
 "$build/bench_search" --configs "$config" --depths "$depths" --cpu "$cpu" --rounds "$rounds" \

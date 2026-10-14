@@ -17,8 +17,7 @@ max_perft_depth="${4:-4}"
 commit=9c2ae73
 
 here="$(cd "$(dirname "$0")" && pwd)"
-backend="$(cd "$here/../.." && pwd)"
-repo="$(cd "$backend/.." && pwd)"
+repo="$(cd "$here/../.." && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
@@ -38,14 +37,14 @@ g++ -std=c++20 -O2 -I"$here" -I/usr/include/jsoncpp -o "$work/legacy_adapter" \
 
 run() { taskset -c "$cpu" "$work/legacy_adapter" "$@"; }
 
-"$backend/bench/environment.sh" "$cpu" >"$out/environment.json"
+"$repo/bench/environment.sh" "$cpu" >"$out/environment.json"
 
 # Move selection, one row per depth and position.
 columns="engine,config,depth,region,position,move,score_cp,nodes,quiescence_nodes,ms,nps"
 columns="$columns,tt_hits,beta_cutoffs,first_move_cutoffs"
 echo "$columns" >"$out/move_selection.csv"
 for depth in $(seq 1 "$max_search_depth"); do
-    run search "$backend/bench/positions/suite.txt" "$depth" 2>/dev/null | grep '^legacy' |
+    run search "$repo/bench/positions/suite.txt" "$depth" 2>/dev/null | grep '^legacy' |
         awk -F'\t' 'BEGIN{OFS=","} {nps = ($7 > 0) ? $6 / $7 * 1000 : 0;
             print "legacy", "original", $2, $3, $4, $5, "", $6, "", $7, nps, "", "", ""}' \
             >>"$out/move_selection.csv"
@@ -75,7 +74,7 @@ done
                 "$name" "$depth" "$nodes" "$want"
             printf ' "correct": %s, "seconds": %s}' "$correct" "$seconds"
         done
-    done <"$backend/bench/positions/perft.txt"
+    done <"$repo/bench/positions/perft.txt"
     echo
     echo "  ]"
     echo "}"

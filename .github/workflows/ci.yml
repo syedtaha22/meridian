@@ -7,11 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  backend:
+  build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -20,19 +17,16 @@ jobs:
 
   # The tests run again under AddressSanitizer and UndefinedBehaviorSanitizer, which is
   # where an out-of-range index or a use after free in the engine would show up.
-  backend-sanitizers:
+  sanitizers:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - run: cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCHESS_SANITIZE=ON
       - run: cmake --build build-asan -j 2
       - run: ctest --test-dir build-asan --output-on-failure
 
-  backend-image:
+  image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t chess-backend backend
+      - run: docker build -t chess-backend .

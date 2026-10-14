@@ -1,6 +1,6 @@
 # C++
-backend/build/
-backend/build-*/
+build/
+build-*/
 
 # Python
 __pycache__/
