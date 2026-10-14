@@ -93,6 +93,8 @@ backend
 Reply: `{ "status": "ok", "engine_version": string, "architecture": string,
 "max_depth": number, "hash_mb": number }`
 
+The version follows the rules in [VERSIONING.md](VERSIONING.md).
+
 ### `POST /move`
 
 Request: `{ "fen": string, "moves"?: string[], "depth"?: number, "time_limit_ms"?: number,

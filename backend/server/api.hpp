@@ -14,7 +14,7 @@ namespace chess::api {
         int64_t max_time_ms = 10000;  ///< Longest search a request may ask for.
         size_t hash_mb = 64;          ///< Transposition table size per worker thread.
         bool use_book = true;         ///< Play opening book moves when the position is in the book.
-        std::string version = "0.1.0";
+        std::string version = "0.2.0";
     };
 
     /**
