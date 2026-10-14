@@ -288,7 +288,10 @@ describes how to report a security problem.
 
 ## License
 
-GPL-3.0-or-later, see [LICENSE](LICENSE).
+Copyright (C) 2026 Syed Taha.
+
+Meridian is free software: it is distributed under the GNU General Public License, either
+version 3 of the License or, at your option, any later version. See [LICENSE](LICENSE).
 
 [blog-link]:          https://syedtaha22.github.io/blog/chess-bitboards-and-benchmarks/
 [build-link]:         https://github.com/syedtaha22/meridian/actions/workflows/ci.yml
