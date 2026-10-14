@@ -211,9 +211,6 @@ The request and reply formats, the environment variables and the limits are in
 ├── backend         # the engine, its server, tests and benchmarks
 │   ├── ...
 │   └── README.md
-├── frontend        # the board as a React package
-│   ├── ...
-│   └── README.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md       # This file
@@ -221,7 +218,6 @@ The request and reply formats, the environment variables and the limits are in
 ```
 
 [backend/README.md](backend/README.md) describes the engine and its server.
-[frontend/README.md](frontend/README.md) describes a browser board for the engine.
 
 ## Roadmap
 

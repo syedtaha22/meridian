@@ -4,8 +4,7 @@ The engine version is the `engine_version` field of the reply of `GET /health`. 
 one place, `Config::version` in [server/api.hpp](server/api.hpp). It follows
 [Semantic Versioning 2.0.0](https://semver.org), `MAJOR.MINOR.PATCH`, with the definitions below.
 
-The version is independent of the version of the frontend package and of the release tags of the
-original desktop game.
+The version is independent of the release tags of the original desktop game.
 
 ## Scope
 

@@ -5,15 +5,12 @@
 ## Area
 
 - [ ] Backend (engine, server, tools)
-- [ ] Frontend package
 - [ ] CI or documentation
 
 ## Checks
 
 - [ ] `ctest` passes in a Release build (backend changes)
 - [ ] `ctest` passes under AddressSanitizer and UndefinedBehaviorSanitizer (backend changes)
-- [ ] `npx tsc --noEmit`, `npm run lint`, `npm test` and `npm run format:check` pass
-      (frontend changes)
 - [ ] Changed C++ files are formatted with `clang-format`
 - [ ] Documentation and tables affected by the change are updated
 

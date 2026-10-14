@@ -16,17 +16,13 @@ to build and test each part, and what a change should include.
 │   ├── tools          # matches, tree drawings
 │   ├── results        # recorded benchmark and match results
 │   └── README.md      # the engine, the API and how to run the benchmarks
-├── frontend           # the @chess/frontend React package, with its own rules engine
-│   ├── src
-│   ├── tests
-│   └── README.md      # how a host page mounts the board
 ├── .github            # CI, issue and pull request templates
 ├── CONTRIBUTING.md
 ├── README.md          # where the project started and where it stands
 └── SECURITY.md
 ```
 
-Each part has its own page: [backend](backend/README.md) and [frontend](frontend/README.md).
+The engine has its own page: [backend](backend/README.md).
 
 ## Backend
 
@@ -72,31 +68,11 @@ Before opening a pull request:
 Results from a different machine should be recorded with their `environment.json`. They should
 not replace the existing baselines.
 
-## Frontend
-
-```bash
-cd frontend
-npm ci
-npx tsc --noEmit
-npm run lint
-npm test
-npm run format:check
-```
-
-- The package takes its colors and fonts from the host's CSS custom properties, each with a
-  fallback, and its class names begin with `chess-`.
-- The black piece drawings are the SVGs in [pieces](frontend/src/assets/pieces), and the white
-  pieces are made from them. After changing one, run `npm run build:pieces` and commit the
-  regenerated [piece-sprite.ts](frontend/src/lib/piece-sprite.ts).
-- Changes to the rules engine in [chess-rules.ts](frontend/src/lib/chess-rules.ts) should come
-  with a test. The perft tests there check the backend's six reference positions.
-
 ## Pull requests
 
 - A pull request should contain one change, describe what it does and why, and link the issue
   it closes.
-- CI should pass: the frontend checks, the backend build and tests, the sanitizer run, and the
-  container build.
+- CI should pass: the backend build and tests, the sanitizer run, and the container build.
 - The README, the API description and the benchmark tables should be updated when the change
   affects them.
 

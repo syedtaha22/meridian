@@ -6,13 +6,6 @@ backend/build-*/
 __pycache__/
 *.pyc
 
-# Node
-node_modules/
-.next/
-dist/
-.vitest/
-next-env.d.ts
-
 .envrc
 
 # OS/editor
