@@ -30,6 +30,6 @@ match quiescence-vs-tt-depth4 --a quiescence --b tt --time-a 0 --time-b 0 \
 match iterative-50ms-vs-quiescence-depth5 --a iterative --b quiescence --time-a 50 \
     --time-b 0 --depth-b 5
 # What null move pruning, late move reductions, killers and check extensions buy.
-match full-50ms-vs-iterative-50ms --a full --b iterative --time-a 50 --time-b 50
-# The whole progression, against the plain fixed-depth search.
-match full-50ms-vs-baseline-depth4 --a full --b baseline --time-a 50 --time-b 0 --depth-b 4
+match pruning-50ms-vs-iterative-50ms --a pruning --b iterative --time-a 50 --time-b 50
+# The progression up to null move pruning and reductions, against the plain fixed-depth search.
+match pruning-50ms-vs-baseline-depth4 --a pruning --b baseline --time-a 50 --time-b 0 --depth-b 4

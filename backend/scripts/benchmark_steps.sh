@@ -4,7 +4,7 @@
 #
 # Timings on a shared machine drift from one run to the next, so ratios between steps are
 # only trustworthy when the steps run in one process and round. Node counts do not
-# drift. This script writes the search rows of steps 02 to 07; benchmark.sh records the
+# drift. This script writes the search rows of steps 02 to 09; benchmark.sh records the
 # rules, evaluation and environment of each step.
 #
 # Usage: scripts/benchmark_steps.sh [--cpu N] [--rounds N]
@@ -31,9 +31,9 @@ cd "$backend"
 shallow="$(mktemp)"
 deep="$(mktemp)"
 trap 'rm -f "$shallow" "$deep"' EXIT
-"$build/bench_search" --configs baseline,ordering,tt,quiescence,iterative,full \
+"$build/bench_search" --configs baseline,ordering,tt,quiescence,iterative,pruning,full,tuned \
     --depths 1,2,3,4,5,6 --cpu "$cpu" --rounds "$rounds" --out "$shallow" >/dev/null
-"$build/bench_search" --configs iterative,full --depths 7,8,9,10 --cpu "$cpu" \
+"$build/bench_search" --configs iterative,pruning,full,tuned --depths 7,8,9,10 --cpu "$cpu" \
     --rounds "$rounds" --out "$deep" >/dev/null
 
 header="$(head -1 "$shallow")"
@@ -54,4 +54,6 @@ file_rows ordering 03-move-ordering
 file_rows tt 04-transposition-table
 file_rows quiescence 05-quiescence
 file_rows iterative 06-iterative-deepening-pvs
-file_rows full 07-pruning-and-reductions
+file_rows pruning 07-pruning-and-reductions
+file_rows full 08-search-refinements
+file_rows tuned 09-tuned-evaluation

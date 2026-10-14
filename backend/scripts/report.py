@@ -11,6 +11,7 @@ TABLE is one of:
     speedup    time of each step relative to the step before it
     phases     mean milliseconds per move at depth 3 by class of position
     matches    the matches between two configurations
+    changes    the changes of the search that were tested by a match, and their verdicts
     FILE       a match against a UCI engine, given as a file name in results/matches
 
 The tool reads results/baselines/*/{rules.json,eval.json,move_selection.csv} and
@@ -257,6 +258,60 @@ def matches_table(results):
     print_table(["Match", "Wins", "Draws", "Losses", "Score", "95% interval", "Elo"], rows)
 
 
+CHANGES = {
+    "01-see": "Exchange evaluation of captures",
+    "02-delta": "Delta pruning",
+    "03-late-captures": "Losing captures after quiet moves",
+    "04-reverse-futility": "Reverse futility pruning",
+    "05-futility": "Futility pruning",
+    "06-razoring": "Razoring",
+    "07-late-move-pruning": "Late move pruning",
+    "08-lmr-table": "Logarithmic reduction table",
+    "09-iir": "Internal iterative reduction",
+    "10-null-margin": "Null move reduction by margin",
+    "11-aspiration": "Aspiration windows",
+    "12-singular": "Singular extensions",
+    "13-counter-history": "Counter moves, continuation score",
+    "14a-hash-64": "Hash of 64MB against 16MB",
+    "14b-buckets": "Two-way table buckets",
+    "15-lazy-smp": "Lazy SMP, 2 threads",
+    "19-root-entropy": "Root entropy",
+    "20-position-history": "History shared by position",
+    "21-window-variance": "Window sized by variance",
+    "22-inertness": "Inertness probe",
+    "23-policy": "Learned policy, scale 16",
+    "23b-policy-4": "Learned policy, scale 4",
+    "23c-policy-48": "Learned policy, scale 48",
+}
+
+
+def changes_table(results):
+    rows = []
+    verdicts = {"H1": "better", "H0": "not better", "no decision": "no decision"}
+
+    with (results / "matches" / "search-experiments" / "ladder.csv").open() as handle:
+        for row in csv.DictReader(handle):
+            name = CHANGES.get(row["label"])
+
+            if name is None:
+                continue
+
+            nodes = row["nodes_ratio"]
+            rows.append(
+                [
+                    name,
+                    row["games"],
+                    f"{float(row['score']):.3f}",
+                    verdicts[row["verdict"]],
+                    f"{float(nodes):.2f}" if nodes not in ("", "None") else "-",
+                    row["missed"],
+                    "yes" if row["kept"] == "1" else "no",
+                ]
+            )
+
+    print_table(["Change", "Games", "Score", "Verdict", "Nodes", "Missed", "Kept"], rows)
+
+
 def level_table(path):
     rows = []
     total = [0, 0, 0, 0]
@@ -309,6 +364,7 @@ def main():
         "speedup": lambda: speedup_table(read_runs(args.results)),
         "phases": lambda: phases_table(read_runs(args.results)),
         "matches": lambda: matches_table(args.results),
+        "changes": lambda: changes_table(args.results),
     }
 
     if args.table in tables:
