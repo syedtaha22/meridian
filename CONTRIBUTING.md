@@ -15,6 +15,7 @@ to build and test it, and what a change should include.
 ├── scripts            # experiments and reports
 ├── src                # the engine library and the UCI program
 ├── tests              # perft, mate puzzles, time management, UCI and search tests
+├── third_party        # code of other projects, with their licenses
 ├── tools              # matches, tuning, training
 ├── CMakeLists.txt     # the build
 ├── CONTRIBUTING.md

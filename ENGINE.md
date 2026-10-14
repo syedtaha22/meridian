@@ -30,6 +30,8 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── policy.hpp               # move features and the learned policy score
 │   ├── tt.hpp                   # transposition table, lockless, shared by threads
 │   ├── timeman.hpp              # the budget of one move from the clock of a game
+│   ├── nnue.hpp                 # the network of the evaluation, with incremental accumulators
+│   ├── syzygy.hpp               # probing of Syzygy endgame tablebases
 │   ├── search.hpp               # search options, presets, the searcher
 │   ├── uci.hpp                  # the UCI protocol around the searcher
 │   └── version.hpp              # the version of the engine
@@ -53,6 +55,9 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── position.cpp
 │   ├── search.cpp
 │   ├── timeman.cpp
+│   ├── nnue.cpp
+│   ├── nnue_builtin.cpp         # the network that is compiled into the library, when there is one
+│   ├── syzygy.cpp
 │   ├── eval.cpp
 │   ├── eval_defaults.inc        # the tuned numbers, as texel_tune found them
 │   ├── see.cpp
@@ -68,6 +73,8 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── book_test.cpp            # book moves are legal, and games vary
 │   ├── timeman_test.cpp         # the time budget stays inside the clock
 │   ├── uci_test.cpp             # scripted UCI sessions
+│   ├── nnue_test.cpp            # incremental accumulators, symmetry, file round trip
+│   ├── syzygy_test.cpp          # probing, root moves and the search with small tables
 │   ├── stress_test.cpp          # random games checked against the rules
 │   └── sprt_test.cpp            # the sequential test, with simulated error rates
 ├── tools
@@ -77,8 +84,11 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── build_book.cpp           # builds the opening book by searching the opening tree
 │   ├── gen_positions.cpp        # self-play positions with results, for tuning
 │   ├── texel_tune.cpp           # tunes the evaluation numbers against the results
+│   ├── train_nnue.cpp           # trains the network of the evaluation from self-play positions
 │   ├── train_policy.cpp         # trains the move policy from self-play games
 │   └── uci_match.cpp            # a match against any UCI engine, with a rating estimate
+├── third_party
+│   └── fathom                   # Syzygy probing code (MIT licence), see its LICENSE
 └── CMakeLists.txt
 ```
 
@@ -112,6 +122,8 @@ below each move and the total.
 | `Threads` | spin, 1 to 64 | 1 | Search threads on one table (Lazy SMP). |
 | `MoveOverhead` | spin, 0 to 5000 | 30 | Milliseconds kept back per move. |
 | `OwnBook` | check | false | Play moves of the opening book while the game is in it. |
+| `EvalFile` | string | empty | A network from `train_nnue`, in place of the hand written one. |
+| `SyzygyPath` | string | empty | Directories of Syzygy tables, separated by `:`. |
 | `Ponder` | check | false | Offered so that a chess program may send `go ponder`. |
 | `Clear Hash` | button | | Forget the table. |
 
@@ -121,6 +133,20 @@ soft limit stops the search after an iteration when about 35% to 70% of it has g
 share when the best move has stayed the same. A hard limit, never above 80% of the time left
 after the move overhead, stops the search at once. With `movetime` the whole time is used. The
 rules are in [timeman.cpp](src/timeman.cpp).
+
+**Tablebases.** With `SyzygyPath` set, the engine reads Syzygy endgame tables with the
+[Fathom](third_party/fathom/README.md) probing code, up to the largest set that is found (5
+pieces is about 1 GB, 6 pieces about 150 GB). A position with no more pieces than the tables hold
+is decided in two ways:
+
+- At the root, the distance-to-zero tables give the move that keeps the result and wins within
+  the 50-move rule (or loses as slowly as possible). The search returns it without searching, and
+  reports a win as `cp 28000`.
+- In the search, a position right after a capture or a pawn move (a half move clock of 0, with no
+  castling rights) scores as a win, a draw or a loss from the table, and counts as `tbhits`.
+
+A cursed win and a blessed loss, which the 50-move rule makes draws, score 0. The switch
+`tablebases` of `SearchOptions` turns the tables off.
 
 `bench` prints the nodes searched, which do not change between runs of a build, and the speed.
 The version in the `id name` line is the one in [version.hpp](include/version.hpp).
@@ -158,6 +184,37 @@ ctest --test-dir build --output-on-failure
   and follows the time, the increment and the moves to go.
 - [uci_test](tests/uci_test.cpp) runs scripted sessions: the handshake, the options, searches
   with depth, node, move time and clock limits, a mate score, a stop, the book and bad input.
+- [syzygy_test](tests/syzygy_test.cpp) loads the small tables of
+  [tests/data/syzygy](tests/data/syzygy) (king and queen, king and rook, king and pawn, queen
+  against rook) and checks the result of positions, a game played out from the root moves to mate,
+  and that the search uses the tables and stops using them with the switch off.
+- [nnue_test](tests/nnue_test.cpp) checks that the accumulator that follows a line of moves equals
+  the one computed from the board (random games, and castling, en passant and promotion move by
+  move), that a position and its mirror score the same, that a network file loads back, and that
+  a search with a network is repeatable.
+
+## Network evaluation
+
+```bash
+build/gen_positions --games 60000 --depth 6 --skip 2 --threads 24 --out positions.txt
+build/train_nnue --data positions.txt --out net.nnue --epochs 30
+build/play_match --a tuned --b tuned --nnue-a net.nnue --sprt --elo0 0 --elo1 10
+```
+
+A network (see [nnue.hpp](include/nnue.hpp)) maps the 768 combinations of a piece and a square to
+128 values for each side, clips them to [0, 255], and combines both sides into one score. The
+values of a position follow the search: a move changes a few rows of the weights, so that an
+evaluation costs one pass over 256 values. Weights are 16-bit integers.
+
+- [gen_positions](tools/gen_positions.cpp) writes each position with the result of its game and
+  the search score.
+- [train_nnue](tools/train_nnue.cpp) fits the weights in floating point with Adam, to the
+  expected points of a blend of the search score and the result, with a fifth of the games held
+  out. It prints the held-out loss of the hand written evaluation on the same targets, and
+  compares the quantized network with the floating point one.
+- `play_match`, `uci_match`, `mate_check` and `bench_search` take `--nnue FILE` (`--nnue-a` and
+  `--nnue-b` for `play_match`), and `SearchOptions::nnue` holds a network. The `EvalFile` option
+  of the UCI program loads one.
 
 ## Benchmarks
 

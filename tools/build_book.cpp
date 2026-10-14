@@ -31,7 +31,7 @@
 // is scored by a search of the position after it to `depth - 1` plies.
 //
 // The output lists the moves of the positions where the engine moves, in the form that
-// `chess/book.hpp` includes.
+// `book.hpp` includes.
 
 #include <algorithm>
 #include <atomic>

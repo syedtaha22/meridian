@@ -30,6 +30,7 @@
 #include "movegen.hpp"
 #include "policy.hpp"
 #include "see.hpp"
+#include "syzygy.hpp"
 
 namespace chess {
 
@@ -172,6 +173,7 @@ namespace chess {
             {"inertness", &SearchOptions::inertness, nullptr},
             {"policy", &SearchOptions::policy, nullptr},
             {"legacy_eval", &SearchOptions::legacy_eval, nullptr},
+            {"tablebases", &SearchOptions::tablebases, nullptr},
             {"history_malus", &SearchOptions::history_malus, nullptr},
             {"history_gravity", &SearchOptions::history_gravity, nullptr},
             {"history_piece", &SearchOptions::history_piece, nullptr},
@@ -238,6 +240,7 @@ namespace chess {
         const SearchOptions tuned;
         SearchOptions o;
         o.max_depth = max_depth;
+        o.nnue = nullptr;
         o.legacy_eval = true;
         o.rfp_margin = 120;
         o.futility_base = 100;
@@ -331,7 +334,8 @@ namespace chess {
         o.aspiration = true;
         o.counter_history = true;
 
-        if (base == "tuned") {
+        if (base == "tuned" || base == "network") {
+            o.nnue = base == "network" ? tuned.nnue : nullptr;
             o.legacy_eval = tuned.legacy_eval;
             o.rfp_margin = tuned.rfp_margin;
             o.futility_base = tuned.futility_base;
@@ -532,6 +536,51 @@ namespace chess {
 
         result.best_move = legal[0];
 
+        // The accumulator of the root, when a network evaluates.
+        nnue_ = options_.nnue.get();
+
+        if (nnue_ != nullptr) {
+            if (acc_.size() < static_cast<size_t>(kMaxPly) + 2) {
+                acc_.resize(static_cast<size_t>(kMaxPly) + 2);
+            }
+
+            nnue::refresh(*nnue_, root, acc_[0]);
+        }
+
+        // The tablebases decide the root position when they hold it.
+        tb_limit_ = options_.tablebases ? syzygy::largest() : 0;
+
+        if (tb_limit_ > 0 && helper_id_ == 0 && root.castling() == 0 &&
+            __builtin_popcountll(root.occupied()) <= tb_limit_) {
+            if (const auto probe = syzygy::probe_root(root)) {
+                ++stats_.tb_hits;
+                result.best_move = probe->best;
+                result.depth = 1;
+                result.pv.assign(1, probe->best);
+
+                if (probe->wdl == syzygy::Wdl::kWin) {
+                    result.score = syzygy::kTbWinScore;
+                } else if (probe->wdl == syzygy::Wdl::kLoss) {
+                    result.score = -syzygy::kTbWinScore;
+                }
+
+                result.stats = stats_;
+                result.elapsed_ms = (now_ns() - start_ns_) / 1e6;
+
+                if (info_callback_) {
+                    IterationInfo info;
+                    info.depth = 1;
+                    info.score = result.score;
+                    info.nodes = stats_.nodes;
+                    info.tb_hits = stats_.tb_hits;
+                    info.elapsed_ms = result.elapsed_ms;
+                    info.pv = result.pv;
+                    info_callback_(info);
+                }
+                return result;
+            }
+        }
+
         const int max_depth = std::clamp(options_.max_depth, 1, kMaxPly - 8);
         const int first_depth = options_.iterative_deepening ? 1 : max_depth;
         root_order_.clear();
@@ -619,6 +668,7 @@ namespace chess {
                     info.depth = depth;
                     info.score = score;
                     info.nodes = stats_.nodes;
+                    info.tb_hits = stats_.tb_hits;
                     info.elapsed_ms = (now_ns() - start_ns_) / 1e6;
                     info.pv = result.pv;
                     info_callback_(info);
@@ -730,10 +780,15 @@ namespace chess {
             }
 
             const Move move = list[i];
+
             Position next = pos;
 
             if (!next.make_move(move)) {
                 continue;
+            }
+
+            if (nnue_ != nullptr) {
+                nnue::update(*nnue_, pos, move, acc_[0], acc_[1]);
             }
 
             keys_.push_back(next.key());
@@ -821,7 +876,7 @@ namespace chess {
             }
 
             ++stats_.nodes;
-            const int value = static_evaluation(pos);
+            const int value = static_evaluation(pos, ply);
 
             return value;
         }
@@ -833,7 +888,7 @@ namespace chess {
             return 0;
         }
         if (ply >= kMaxPly - 2) {
-            const int value = static_evaluation(pos);
+            const int value = static_evaluation(pos, ply);
             return value;
         }
 
@@ -870,12 +925,34 @@ namespace chess {
             }
         }
 
+        // A position with few pieces right after a capture or a pawn move is decided by the
+        // tablebases, when they are loaded.
+        if (tb_limit_ > 0 && excluded.is_null() && pos.halfmove_clock() == 0 &&
+            __builtin_popcountll(pos.occupied()) <= tb_limit_) {
+            if (const auto wdl = syzygy::probe_wdl(pos)) {
+                ++stats_.tb_hits;
+                int value = 0;
+
+                if (*wdl == syzygy::Wdl::kWin) {
+                    value = syzygy::kTbWinScore - ply;
+                } else if (*wdl == syzygy::Wdl::kLoss) {
+                    value = -(syzygy::kTbWinScore - ply);
+                }
+
+                if (options_.transposition_table) {
+                    tt_->store(pos.key(), Move(), value, depth, kBoundExact);
+                }
+
+                return value;
+            }
+        }
+
         // The static score is computed once, when a technique first needs it.
         int static_eval = 0;
         bool have_eval = false;
         auto eval = [&]() {
             if (!have_eval) {
-                static_eval = static_evaluation(pos);
+                static_eval = static_evaluation(pos, ply);
                 have_eval = true;
             }
 
@@ -938,6 +1015,11 @@ namespace chess {
             excluded.is_null() && pos.has_non_pawn_material() && eval() >= beta) {
             Position next = pos;
             next.make_null_move();
+
+            if (nnue_ != nullptr) {
+                acc_[static_cast<size_t>(ply) + 1] = acc_[static_cast<size_t>(ply)];
+            }
+
             keys_.push_back(next.key());
             int reduction = 2 + depth / 6;
 
@@ -1102,6 +1184,11 @@ namespace chess {
 
             if (!next.make_move(move)) {
                 continue;
+            }
+
+            if (nnue_ != nullptr) {
+                nnue::update(*nnue_, pos, move, acc_[static_cast<size_t>(ply)],
+                             acc_[static_cast<size_t>(ply) + 1]);
             }
 
             ++legal_moves;
@@ -1326,7 +1413,7 @@ namespace chess {
         ++stats_.quiescence_nodes;
 
         if (ply >= kMaxPly - 2) {
-            const int value = static_evaluation(pos);
+            const int value = static_evaluation(pos, ply);
             return value;
         }
 
@@ -1334,7 +1421,7 @@ namespace chess {
         int best = -kInfinity;
 
         if (!in_check) {
-            best = static_evaluation(pos);
+            best = static_evaluation(pos, ply);
 
             if (best >= beta) {
                 return best;
@@ -1390,6 +1477,11 @@ namespace chess {
 
             if (!next.make_move(list[i])) {
                 continue;
+            }
+
+            if (nnue_ != nullptr) {
+                nnue::update(*nnue_, pos, list[i], acc_[static_cast<size_t>(ply)],
+                             acc_[static_cast<size_t>(ply) + 1]);
             }
 
             ++legal_moves;

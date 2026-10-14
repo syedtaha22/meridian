@@ -36,7 +36,7 @@ PARAMETERS = {
 }
 
 
-# The techniques that the preset `tuned` has on. The start values above are the
+# The techniques that the presets `tuned` and `network` have on. The start values above are the
 # defaults of `SearchOptions`, and a base can name another value with `+name=value`.
 DEFAULT_ON = {"reverse_futility", "futility", "null_margin", "aspiration"}
 
@@ -48,7 +48,7 @@ def parameters_of(base):
     changes = base.split("+")[1:]
     flags = {c.split("=")[0] for c in changes if not c.endswith("=0")}
 
-    if base.split("+")[0] == "tuned":
+    if base.split("+")[0] in ("tuned", "network"):
         flags |= DEFAULT_ON - {c.split("=")[0] for c in changes if c.endswith("=0")}
     explicit = {c.split("=")[0]: int(c.split("=")[1]) for c in changes if "=" in c}
     found = []

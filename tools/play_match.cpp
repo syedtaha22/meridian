@@ -26,13 +26,20 @@
 //                   [--time-a 50] [--time-b 50] [--openings 50] [--random-plies 8]
 //                   [--threads 8] [--cpu-base 0] [--seed 1] [--hash 16]
 //                   [--hash-a 16] [--hash-b 16] [--book-a] [--book-b]
-//                   [--eval-a FILE] [--eval-b FILE]
+//                   [--eval-a FILE] [--eval-b FILE] [--nnue-a FILE] [--nnue-b FILE]
+//                   [--syzygy PATH]
 //
 // Each side is limited by `--time-*` milliseconds per move and, when that is zero, by
 // `--depth-*` plies.
 //
 // `--eval-a` and `--eval-b` give a side the evaluation numbers of a file written by
 // `texel_tune`, in place of the evaluation of the engine.
+//
+// `--nnue-a` and `--nnue-b` give a side a network written by `train_nnue`, which evaluates in
+// place of everything else.
+//
+// `--syzygy PATH` loads Syzygy tables for both sides. A side that should not use them has the
+// change `tablebases=0` in its preset name, as in `tuned+tablebases=0`.
 //
 // A side with `--book-a` or `--book-b` plays the built-in opening book while the game is in it.
 // With `--random-plies 0` the games start from the initial position, and the two games of a
@@ -60,6 +67,7 @@
 #include "movegen.hpp"
 #include "search.hpp"
 #include "sprt.hpp"
+#include "syzygy.hpp"
 
 namespace {
 
@@ -75,6 +83,7 @@ namespace {
         size_t hash_mb = 16;
         bool book = false;                       ///< Play book moves while the game is in the book.
         std::shared_ptr<const EvalParams> eval;  ///< Tuned evaluation, or null for the default.
+        std::shared_ptr<const nnue::Network> nnue;  ///< A network, or null.
     };
 
     /**
@@ -92,6 +101,7 @@ namespace {
             options.time_limit_ms = side.time_ms;
             options.hash_mb = side.hash_mb;
             options.eval_params = side.eval;
+            options.nnue = side.nnue;
             return Searcher(options);
         };
 
@@ -215,6 +225,28 @@ int main(int argc, char **argv) {
     };
     a.eval = load_eval("eval-a");
     b.eval = load_eval("eval-b");
+    auto load_nnue = [&args](const char *name) -> std::shared_ptr<const nnue::Network> {
+        const std::string path = args.get(name, "");
+
+        if (path.empty()) {
+            return nullptr;
+        }
+
+        auto network = nnue::load(path);
+
+        if (!network) {
+            std::cerr << "cannot read a network from " << path << "\n";
+            std::exit(1);
+        }
+        return network;
+    };
+    if (args.has("syzygy") && !syzygy::init(args.get("syzygy", ""))) {
+        std::cerr << "no Syzygy tables in " << args.get("syzygy", "") << "\n";
+        return 1;
+    }
+
+    a.nnue = load_nnue("nnue-a");
+    b.nnue = load_nnue("nnue-b");
     b.book = args.has("book-b");
     a.hash_mb = static_cast<size_t>(args.get_int("hash-a", hash));
     b.hash_mb = static_cast<size_t>(args.get_int("hash-b", hash));

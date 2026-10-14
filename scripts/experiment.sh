@@ -5,7 +5,7 @@
 # Usage: scripts/experiment.sh LABEL NEW BASE [--elo0 0] [--elo1 10] [--openings 1500]
 #                                              [--time 50] [--threads 12] [--depths 5,7]
 #                                              [--extra "--hash-a 64 --hash-b 16"]
-#                                              [--eval FILE]
+#                                              [--eval FILE] [--puzzle-plies N]
 #
 # NEW and BASE are preset names, with changes such as `full+see`. The output is written to
 # results/matches/search-experiments/LABEL.txt and to the terminal.
@@ -30,6 +30,7 @@ threads=12
 depths=5,7
 extra=""
 eval_file=""
+puzzle_plies=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -41,6 +42,7 @@ while [ $# -gt 0 ]; do
         --depths) depths="$2"; shift ;;
         --extra) extra="$2"; shift ;;
         --eval) eval_file="$2"; shift ;;
+        --puzzle-plies) puzzle_plies="$2"; shift ;;
         *) echo "unknown option $1" >&2; exit 1 ;;
     esac
     shift
@@ -66,7 +68,8 @@ fi
     echo "# $label: $new against $base"
     echo
     echo "## Mate puzzles"
-    "$build/mate_check" --config "$new" --data tests/data "${eval_check[@]}" ||
+    "$build/mate_check" --config "$new" --data tests/data --extra-plies "$puzzle_plies" \
+        "${eval_check[@]}" ||
         echo "MISSED PUZZLES"
     echo
     echo "## Nodes at a fixed depth (mean over the 15 suite positions)"

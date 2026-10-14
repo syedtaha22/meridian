@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "eval.hpp"
+#include "nnue.hpp"
 #include "position.hpp"
 #include "tt.hpp"
 #include "types.hpp"
@@ -91,6 +92,7 @@ namespace chess {
         bool inertness = false;              ///< Reduce nodes that a one-ply probe finds inert.
         bool policy = false;                 ///< Order moves by a learned policy.
         bool legacy_eval = false;            ///< Evaluate with the tables before the tuning.
+        bool tablebases = true;              ///< Use Syzygy tables, when some are loaded.
         bool history_malus = false;          ///< Lower the score of quiet moves that failed to cut.
         bool history_gravity = true;         ///< Decay a history entry in proportion to its size.
         bool history_piece = false;          ///< Key history by piece and destination.
@@ -129,18 +131,26 @@ namespace chess {
         std::shared_ptr<const EvalParams> eval_params;
 
         /**
+         * A network for the evaluation, or null. It takes the place of `eval_params` and of the
+         * hand written evaluation.
+         */
+        std::shared_ptr<const nnue::Network> nnue = nnue::builtin();
+
+        /**
          * @brief A named configuration, from the plain search to the full one.
          *
          * Names: "baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full"
-         * and "tuned". "full" is the engine of step 08, with the evaluation, margins and history
-         * of that step. "tuned" is the engine of step 09, and its values are the defaults of
-         * these options. A name
+         * "tuned" and "network". "full" is the engine of step 08, with the evaluation, margins
+         * and history of that step. "tuned" is step 09, which adds the tuned evaluation, margins
+         * and history. "network" is step 10, which replaces the evaluation with the network
+         * that is compiled into the library, and its values are the defaults of these
+         * options. A name
          * may be followed by changes joined with `+`: a switch (`+see`, `+see=0`) or a parameter
          * (`+rfp_margin=100`), as in `full+delta_pruning+razoring`.
          *
          * @param name Preset name, with its changes.
          * @param max_depth Nominal depth in plies.
-         * @return The options, or the tuned configuration for an unknown name.
+         * @return The options, or the network configuration for an unknown name.
          */
         static SearchOptions preset(std::string_view name, int max_depth);
     };
@@ -159,6 +169,7 @@ namespace chess {
         uint64_t null_cutoffs = 0;
         uint64_t reductions = 0;  ///< Late moves searched at reduced depth.
         uint64_t re_searches = 0;
+        uint64_t tb_hits = 0;  ///< Positions that a tablebase decided.
     };
 
     /**
@@ -194,6 +205,7 @@ namespace chess {
         int depth = 0;
         int score = 0;  ///< Centipawns for the side to move; mates near kMateScore.
         uint64_t nodes = 0;
+        uint64_t tb_hits = 0;
         double elapsed_ms = 0;
         std::vector<Move> pv;
     };
@@ -267,7 +279,14 @@ namespace chess {
         int search_root(const Position &pos, int depth, int alpha, int beta);
         bool should_stop();
 
-        int static_evaluation(const Position &pos) const noexcept {
+        /**
+         * The static score of `pos`, which is at `ply`. With a network, the accumulator of that
+         * ply has to hold the position.
+         */
+        int static_evaluation(const Position &pos, int ply) const noexcept {
+            if (nnue_ != nullptr) {
+                return nnue::evaluate(*nnue_, acc_[static_cast<size_t>(ply)], pos.side_to_move());
+            }
             if (options_.eval_params) {
                 return evaluate(pos, *options_.eval_params);
             }
@@ -305,6 +324,13 @@ namespace chess {
 
         // The piece and destination of the move that led to each ply, or -1.
         int stack_[kMaxPly];
+
+        // The largest position that the loaded tablebases decide, as of the start of the search.
+        int tb_limit_ = 0;
+
+        // The network of the search that runs, and the accumulator of the position at each ply.
+        const nnue::Network *nnue_ = nullptr;
+        std::vector<nnue::Accumulator> acc_;
 
         // History by piece and destination, captures by piece, destination and victim, and the
         // continuation score two plies back.

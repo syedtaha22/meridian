@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(chess_engine LANGUAGES CXX)
+project(chess_engine LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,14 +30,20 @@ add_library(chess_core STATIC
   src/book.cpp
   src/eval.cpp
   src/movegen.cpp
+  src/nnue.cpp
+  src/nnue_builtin.cpp
   src/position.cpp
   src/search.cpp
   src/see.cpp
+  src/syzygy.cpp
   src/policy.cpp
   src/timeman.cpp
   src/tt.cpp
+  third_party/fathom/tbprobe.c
 )
 target_include_directories(chess_core PUBLIC include)
+target_include_directories(chess_core PRIVATE third_party/fathom)
+target_link_libraries(chess_core PUBLIC Threads::Threads)
 target_compile_options(chess_core PRIVATE ${WARNING_FLAGS})
 if(CHESS_BMI2)
   target_compile_options(chess_core PUBLIC -mpopcnt -mbmi2)
@@ -74,6 +80,16 @@ target_compile_options(search_test PRIVATE ${WARNING_FLAGS})
 add_test(NAME search_test COMMAND search_test ${CMAKE_SOURCE_DIR}/tests/data
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+add_executable(syzygy_test tests/syzygy_test.cpp)
+target_link_libraries(syzygy_test PRIVATE chess_core)
+target_compile_options(syzygy_test PRIVATE ${WARNING_FLAGS})
+add_test(NAME syzygy_test COMMAND syzygy_test ${CMAKE_SOURCE_DIR}/tests/data/syzygy)
+
+add_executable(nnue_test tests/nnue_test.cpp)
+target_link_libraries(nnue_test PRIVATE chess_core)
+target_compile_options(nnue_test PRIVATE ${WARNING_FLAGS})
+add_test(NAME nnue_test COMMAND nnue_test)
+
 # Benchmarks --------------------------------------------------------------
 
 foreach(name bench_rules bench_search bench_eval)
@@ -100,7 +116,7 @@ add_test(NAME timeman_test COMMAND timeman_test)
 add_executable(uci_test tests/uci_test.cpp)
 target_link_libraries(uci_test PRIVATE chess_uci)
 target_compile_options(uci_test PRIVATE ${WARNING_FLAGS})
-add_test(NAME uci_test COMMAND uci_test)
+add_test(NAME uci_test COMMAND uci_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_executable(sprt_test tests/sprt_test.cpp)
 target_compile_options(sprt_test PRIVATE ${WARNING_FLAGS})
@@ -108,7 +124,7 @@ add_test(NAME sprt_test COMMAND sprt_test)
 
 # Tools -------------------------------------------------------------------
 
-foreach(name play_match uci_match mate_check train_policy build_book gen_positions texel_tune)
+foreach(name play_match uci_match mate_check train_policy build_book gen_positions texel_tune train_nnue)
   add_executable(${name} tools/${name}.cpp)
   target_link_libraries(${name} PRIVATE chess_core Threads::Threads)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})

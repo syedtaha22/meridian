@@ -29,6 +29,7 @@
 
 #include "book.hpp"
 #include "movegen.hpp"
+#include "syzygy.hpp"
 #include "timeman.hpp"
 #include "version.hpp"
 
@@ -96,7 +97,7 @@ namespace chess::uci {
     }
 
     void Engine::make_searcher() {
-        SearchOptions options = SearchOptions::preset("tuned", 64);
+        SearchOptions options = SearchOptions::preset("network", 64);
         options.hash_mb = static_cast<size_t>(settings_.hash_mb);
         options.threads = settings_.threads;
         searcher_ = std::make_unique<Searcher>(options);
@@ -106,7 +107,13 @@ namespace chess::uci {
             line << "info depth " << info.depth << " score " << score_text(info.score) << " nodes "
                  << info.nodes << " nps "
                  << static_cast<uint64_t>(static_cast<double>(info.nodes) * 1000.0 / ms) << " time "
-                 << static_cast<int64_t>(info.elapsed_ms) << " pv";
+                 << static_cast<int64_t>(info.elapsed_ms);
+
+            if (info.tb_hits > 0) {
+                line << " tbhits " << info.tb_hits;
+            }
+
+            line << " pv";
 
             for (const Move move : info.pv) {
                 line << ' ' << move_to_uci(move);
@@ -163,6 +170,8 @@ namespace chess::uci {
         send("option name MoveOverhead type spin default 30 min 0 max 5000");
         send("option name OwnBook type check default false");
         send("option name Ponder type check default false");
+        send("option name EvalFile type string default <empty>");
+        send("option name SyzygyPath type string default <empty>");
         send("option name Clear Hash type button");
         send("uciok");
     }
@@ -248,6 +257,27 @@ namespace chess::uci {
         } else if (key == "ownbook") {
             const std::string text = lower(value);
             settings_.own_book = text == "true" || text == "1";
+        } else if (key == "evalfile") {
+            if (value.empty() || value == "<empty>") {
+                searcher_->options().nnue = nnue::builtin();
+                send(searcher_->options().nnue ? "info string evaluation: built-in network"
+                                               : "info string evaluation: hand written");
+            } else if (auto network = nnue::load(value)) {
+                searcher_->options().nnue = network;
+                send("info string evaluation: network " + value);
+            } else {
+                send("info string cannot read a network from " + value);
+            }
+        } else if (key == "syzygypath") {
+            const bool found = value != "<empty>" && syzygy::init(value);
+
+            if (found) {
+                send("info string Syzygy tablebases for up to " +
+                     std::to_string(syzygy::largest()) + " pieces");
+            } else {
+                syzygy::init("");
+                send("info string no Syzygy tablebases found");
+            }
         } else if (key == "clear hash") {
             searcher_->clear();
         }
@@ -501,7 +531,7 @@ namespace chess::uci {
 
     uint64_t Engine::bench(int depth) {
         finish_search(true);
-        SearchOptions options = SearchOptions::preset("tuned", std::max(1, depth));
+        SearchOptions options = SearchOptions::preset("network", std::max(1, depth));
         options.hash_mb = 16;
         Searcher searcher(options);
         uint64_t nodes = 0;

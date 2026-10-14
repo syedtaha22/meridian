@@ -124,9 +124,9 @@ namespace {
 
         for (const char *name :
              {"baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full", "tuned",
-              "full+delta_pruning+razoring+late_move_pruning", "full+lmr_table+iir+singular",
-              "full+tt_buckets+threads=2", "full+root_entropy+transposition_history",
-              "full+window_variance+inertness+policy",
+              "network", "full+delta_pruning+razoring+late_move_pruning",
+              "full+lmr_table+iir+singular", "full+tt_buckets+threads=2",
+              "full+root_entropy+transposition_history", "full+window_variance+inertness+policy",
               "full+history_malus+history_gravity+history_limit=16384+history_bonus=8",
               "full+history_piece+capture_history+continuation2+counter_first",
               "full+killer_count=1+mvv_scale=64+bad_capture_margin=50+underpromotions_late"}) {
@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
     test_limits();
     test_repetition();
 
-    for (const char *config : {"full", "tuned"}) {
+    for (const char *config : {"full", "tuned", "network"}) {
         test_mates(data + "/mate_in_1.fen", 1, config);
         test_mates(data + "/mate_in_2.fen", 2, config);
         test_mates(data + "/mate_in_3.fen", 3, config);

@@ -25,7 +25,7 @@
 // Writes move_selection.csv with one row per configuration, depth and position.
 //
 // Usage: bench_search --configs baseline,full --depths 1,2,3,4 [--suite FILE] [--cpu N]
-//                     [--eval FILE]
+//                     [--eval FILE] [--nnue FILE]
 //                     [--rounds N] [--out FILE]
 
 #include <fstream>
@@ -78,6 +78,16 @@ int main(int argc, char **argv) {
     const std::string out_path = args.get("out", "move_selection.csv");
     const int hash_mb = args.get_int("hash", 16);
     std::shared_ptr<EvalParams> eval;
+    std::shared_ptr<const nnue::Network> network;
+
+    if (args.has("nnue")) {
+        network = nnue::load(args.get("nnue", ""));
+
+        if (!network) {
+            std::cerr << "cannot read the network\n";
+            return 1;
+        }
+    }
 
     if (args.has("eval")) {
         eval = std::make_shared<EvalParams>(EvalParams::defaults());
@@ -101,6 +111,7 @@ int main(int argc, char **argv) {
                 SearchOptions options = SearchOptions::preset(config, depth);
                 options.hash_mb = static_cast<size_t>(hash_mb);
                 options.eval_params = eval;
+                options.nnue = network;
                 Searcher searcher(options);
 
                 for (size_t i = 0; i < suite.size(); ++i) {

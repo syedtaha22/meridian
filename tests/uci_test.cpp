@@ -84,6 +84,7 @@ namespace {
         check(contains(out, "option name MoveOverhead type spin"), "MoveOverhead is an option");
         check(contains(out, "option name OwnBook type check"), "OwnBook is an option");
         check(contains(out, "option name Ponder type check"), "Ponder is an option");
+        check(contains(out, "option name SyzygyPath type string"), "SyzygyPath is an option");
         check(contains(out, "uciok"), "uciok ends the identity");
         check(contains(out, "readyok"), "isready is answered");
     }
@@ -151,6 +152,22 @@ namespace {
 
         chess::Position position;
         check(!chess::move_from_uci(position, best_move(on)).is_null(), "the book move is legal");
+    }
+
+    void test_tablebases() {
+        // The tables of the test data cover queen and rook endings with up to 4 pieces.
+        const std::string out =
+            session("setoption name SyzygyPath value tests/data/syzygy\n"
+                    "position fen 4k3/8/8/8/8/8/8/3QK3 w - - 0 1\ngo depth 6\n");
+        check(contains(out, "info string Syzygy tablebases for up to 4 pieces") ||
+                  contains(out, "info string Syzygy tablebases for up to 5 pieces"),
+              "the tables are found");
+        check(contains(out, "tbhits "), "the tables decide the position");
+        check(!best_move(out).empty() && best_move(out) != "0000", "a move from the tables");
+
+        const std::string none = session("setoption name SyzygyPath value /nonexistent\nisready\n");
+        check(contains(none, "no Syzygy tablebases found"), "a path without tables is reported");
+        session("setoption name SyzygyPath value <empty>\n");
     }
 
     void test_bad_input() {
@@ -235,6 +252,7 @@ int main() {
     test_limits();
     test_options();
     test_book();
+    test_tablebases();
     test_bad_input();
     test_stop();
     test_bench();

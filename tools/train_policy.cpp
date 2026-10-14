@@ -20,7 +20,7 @@
 //
 // The engine plays games from random openings with a fixed depth, and every position with its
 // chosen move is a sample. The policy is a log-linear model over the binary features of
-// `chess/policy.hpp`, trained to give the chosen move the highest probability among the legal
+// `policy.hpp`, trained to give the chosen move the highest probability among the legal
 // moves of the position. The weights are written as `src/policy_weights.inc`.
 //
 // Usage: train_policy [--games 600] [--depth 6] [--config full+see] [--threads 12]

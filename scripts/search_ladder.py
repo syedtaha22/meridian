@@ -33,6 +33,8 @@ def run(label, new, base, args, options):
     ] + options
     if args.eval:
         command += ["--eval", args.eval]
+    if args.puzzle_plies:
+        command += ["--puzzle-plies", str(args.puzzle_plies)]
     subprocess.run(command, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return (OUT / f"{label}.txt").read_text()
 
@@ -41,7 +43,8 @@ def base_missed_of(args, base):
     """
     The number of mate puzzles that the base itself misses.
     """
-    command = [str(ROOT / "build" / "mate_check"), "--config", base, "--data", "tests/data"]
+    command = [str(ROOT / "build" / "mate_check"), "--config", base, "--data", "tests/data",
+               "--extra-plies", str(args.puzzle_plies)]
     if args.eval:
         command += ["--eval", args.eval]
     text = subprocess.run(command, capture_output=True, text=True, cwd=ROOT).stdout
@@ -90,6 +93,8 @@ def main():
     parser.add_argument("--time", type=int, default=50)
     parser.add_argument("--script", default="experiment.sh")
     parser.add_argument("--eval", default="", help="evaluation numbers file for both sides")
+    parser.add_argument("--puzzle-plies", type=int, default=0,
+                        help="plies added to the depth of the mate puzzle search")
     args = parser.parse_args()
 
     base = args.base

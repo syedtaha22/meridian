@@ -19,13 +19,15 @@
 // Plays the engine against itself and writes labelled positions for tuning the evaluation.
 //
 // Usage: gen_positions [--games 20000] [--depth 7] [--config full] [--threads 24]
-//                      [--random-plies 8] [--skip 3] [--seed 1] [--out positions.txt]
+//                      [--random-plies 8] [--skip 3] [--seed 1] [--nnue FILE]
+//                      [--out positions.txt]
 //
 // Every game starts from random legal moves. After the opening, every `--skip` plies a quiet
 // position is kept: the side to move is not in check, the search found no capture or promotion
 // as the best move, and the score is not a mate. A game ends at a mate, a draw by the rules, or
 // when one side is far ahead for several moves in a row. Each line is
-// `FEN<TAB>result<TAB>game`, where the result is 1, 0.5 or 0 for White.
+// `FEN<TAB>result<TAB>game<TAB>score`, where the result is 1, 0.5 or 0 for White, and the score is
+// the search score in centipawns from the side of White.
 
 #include <atomic>
 #include <fstream>
@@ -36,6 +38,7 @@
 
 #include "../bench/common.hpp"
 #include "movegen.hpp"
+#include "nnue.hpp"
 #include "search.hpp"
 
 namespace {
@@ -46,6 +49,7 @@ namespace {
      * Plays one game; returns the result for White and the positions it kept.
      */
     double play(uint64_t seed, const std::string &config, int depth, int random_plies, int skip,
+                const std::shared_ptr<const nnue::Network> &network,
                 std::vector<std::string> &kept) {
         std::mt19937_64 random(seed);
         Position pos;
@@ -65,6 +69,7 @@ namespace {
 
         SearchOptions options = SearchOptions::preset(config, depth);
         options.hash_mb = 16;
+        options.nnue = network;
         Searcher searcher(options);
         int ahead_white = 0;
         int ahead_black = 0;
@@ -111,7 +116,7 @@ namespace {
                                std::abs(result.score) < kMateBound;
 
             if (quiet && ply % skip == 0) {
-                kept.push_back(pos.to_fen());
+                kept.push_back(pos.to_fen() + '\t' + std::to_string(white_score));
             }
 
             history.push_back(pos.key());
@@ -132,6 +137,16 @@ int main(int argc, char **argv) {
     const int skip = std::max(1, args.get_int("skip", 3));
     const uint64_t seed = static_cast<uint64_t>(args.get_int("seed", 1));
     const std::string path = args.get("out", "positions.txt");
+    std::shared_ptr<const nnue::Network> network;
+
+    if (args.has("nnue")) {
+        network = nnue::load(args.get("nnue", ""));
+
+        if (!network) {
+            std::cerr << "cannot read the network\n";
+            return 1;
+        }
+    }
 
     std::ofstream out(path);
     std::mutex lock;
@@ -144,11 +159,14 @@ int main(int argc, char **argv) {
             for (int game = next++; game < games; game = next++) {
                 std::vector<std::string> kept;
                 const double result = play(seed * 1000003ULL + static_cast<uint64_t>(game), config,
-                                           depth, random_plies, skip, kept);
+                                           depth, random_plies, skip, network, kept);
                 std::lock_guard<std::mutex> guard(lock);
 
                 for (const std::string &fen : kept) {
-                    out << fen << '\t' << result << '\t' << game << '\n';
+                    // The FEN and the score are one field of the kept string, tab separated.
+                    const size_t tab = fen.rfind('\t');
+                    out << fen.substr(0, tab) << '\t' << result << '\t' << game << '\t'
+                        << fen.substr(tab + 1) << '\n';
                 }
                 written += kept.size();
 

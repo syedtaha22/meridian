@@ -7,7 +7,8 @@
 #
 # Usage: scripts/benchmark.sh RUN_ID CONFIG [options]
 #   RUN_ID    folder name under results/baselines/
-#   CONFIG    search preset: baseline, ordering, tt, quiescence, iterative, pruning, full, tuned
+#   CONFIG    search preset: baseline, ordering, tt, quiescence, iterative, pruning, full,
+#             tuned, network
 #   --rays    build with ray-walking slider attacks instead of magic bitboards
 #   --cpu N   CPU to pin to (default 8)
 #   --depths  comma separated search depths (default 1,2,3,4,5,6; to 10 for the last two)
@@ -36,7 +37,7 @@ done
 
 if [ -z "$depths" ]; then
     case "$config" in
-        iterative|pruning|full|tuned) depths="1,2,3,4,5,6,7,8,9,10" ;;
+        iterative|pruning|full|tuned|network) depths="1,2,3,4,5,6,7,8,9,10" ;;
         *) depths="1,2,3,4,5,6" ;;
     esac
 fi

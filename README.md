@@ -221,6 +221,7 @@ The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 ├── include         # headers
 ├── src             # the engine library and the UCI program
 ├── tests           # perft, mate puzzles, time management, UCI sessions
+├── third_party     # Syzygy probing code, with its license
 ├── tools           # matches, tuning, training
 ├── scripts         # experiments and reports
 ├── results         # recorded benchmark and match results
@@ -296,6 +297,9 @@ Copyright (C) 2026 Syed Taha.
 
 Meridian is free software: it is distributed under the GNU General Public License, either
 version 3 of the License or, at your option, any later version. See [LICENSE](LICENSE).
+
+The Syzygy probing code in [third_party/fathom](third_party/fathom) is distributed under its own
+MIT license, which is in that directory.
 
 [blog-link]:          https://syedtaha22.github.io/blog/chess-bitboards-and-benchmarks/
 [build-link]:         https://github.com/syedtaha22/meridian/actions/workflows/ci.yml
