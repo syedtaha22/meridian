@@ -2,6 +2,10 @@
 backend/build/
 backend/build-*/
 
+# Python
+__pycache__/
+*.pyc
+
 # Node
 node_modules/
 .next/
