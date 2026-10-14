@@ -4,7 +4,7 @@ The engine version is the version of the `id name` line of the UCI program. It i
 one place, `kEngineVersion` in [include/version.hpp](include/version.hpp). It follows
 [Semantic Versioning 2.0.0](https://semver.org), `MAJOR.MINOR.PATCH`, with the definitions below.
 
-The version is independent of the release tags of the original desktop game.
+The version is independent of the release tags of Horizon, the engine that Meridian rewrites.
 
 ## Scope
 
@@ -56,5 +56,4 @@ declared stable.
 ## Releases
 
 - The version should change in the commit that changes the behaviour that it describes.
-- A release tag should be named `meridian-vMAJOR.MINOR.PATCH`, so that it does not collide with the
-  tags of the original desktop game.
+- A release tag should be named `meridian-vMAJOR.MINOR.PATCH`.

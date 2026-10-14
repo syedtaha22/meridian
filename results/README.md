@@ -544,7 +544,7 @@ fixed cost of about 0.3ms. In steady state (3s searches on three positions), Sto
 
 One logistic fit combines these players:
 
-- step 00 at depth 3, which is the depth of the desktop game
+- step 00 at depth 3, which is the depth of Horizon
 - step 01 at depths 1 to 3
 - Stockfish 19 at `UCI_Elo` 1320 to 1800, with 100ms per move
 

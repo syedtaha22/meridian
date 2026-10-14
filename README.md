@@ -1,8 +1,11 @@
 <div align="center">
 
   <a href="https://syedtaha22.github.io/meridian/">
-    <img src="assets/logo.svg#gh-light-mode-only" alt="Meridian" width="200">
-    <img src="assets/logo-dark.svg#gh-dark-mode-only" alt="Meridian" width="200">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/logo.svg">
+      <img src="assets/logo.svg" alt="Meridian" width="200">
+    </picture>
   </a>
 
   A UCI chess engine in C++20.
@@ -26,8 +29,9 @@
 
 </div>
 
-Meridian is a chess engine written in C++. It is the rewrite of Horizon, a desktop game that was
-written for a university course project in 2024.
+Meridian is a chess engine written in C++. It is the rewrite of
+[Horizon](https://github.com/syedtaha22/Chess-v5.0), a chess engine with a desktop interface that
+was written for a university course project in 2024.
 
 ## Architecture
 
@@ -268,8 +272,8 @@ causes the cutoff 94% of the time. The results of the 25 ideas that were tested 
 
 ## Provenance
 
-The engine began as a Windows desktop game with a raylib interface. Its rules, search and
-evaluation were rewritten as a library, and the interface moved to the web.
+The engine began as Horizon, a chess engine with a Windows desktop interface built on raylib. Its
+rules, search and evaluation were rewritten as a library, and the interface moved to the web.
 [results](results/README.md) records the speed and the rules correctness of the
 original engine next to every later step. The table shows the original engine:
 
