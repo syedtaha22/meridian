@@ -1,0 +1,27 @@
+# 05-futility: full+see+losing_captures_late+reverse_futility+futility against full+see+losing_captures_late+reverse_futility
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+see+losing_captures_late+reverse_futility+futility: 0 missed, 5234959 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+see+losing_captures_late+reverse_futility     5 endgame           0.25         1701       6785
+full+see+losing_captures_late+reverse_futility     5 middlegame        0.68         3958       5801
+full+see+losing_captures_late+reverse_futility     5 opening           1.08         7093       6546
+full+see+losing_captures_late+reverse_futility     7 endgame           1.05         7256       6910
+full+see+losing_captures_late+reverse_futility     7 middlegame        2.58        18024       6996
+full+see+losing_captures_late+reverse_futility     7 opening           3.84        24784       6453
+full+see+losing_captures_late+reverse_futility+futility     5 endgame           0.27         1576       5801
+full+see+losing_captures_late+reverse_futility+futility     5 middlegame        0.59         2013       3403
+full+see+losing_captures_late+reverse_futility+futility     5 opening           0.91         3724       4094
+full+see+losing_captures_late+reverse_futility+futility     7 endgame           0.97         6313       6534
+full+see+losing_captures_late+reverse_futility+futility     7 middlegame        2.46         8060       3270
+full+see+losing_captures_late+reverse_futility+futility     7 opening           3.20        13278       4148
+
+## Match at 50ms per move
+full+see+losing_captures_late+reverse_futility+futility (50ms) vs full+see+losing_captures_late+reverse_futility (50ms)
+games 640: +284 =138 -218  score 0.552  (95% interval 0.517 to 0.586)  Elo +36 (+12 to +60)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 2.99 (bounds -2.94, 2.94) after 640 games: H1 accepted: the first configuration is stronger

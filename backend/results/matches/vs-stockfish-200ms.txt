@@ -1,4 +1,4 @@
-full (200ms per move) against UCI_Elo opponent (200ms per move)
+pruning (200ms per move) against UCI_Elo opponent (200ms per move)
 opponent   games   wins  draws losses    score   rating from this level
 1320          50     50      0      0   1.000         2640 (2640 to 2640)
 1600          50     45      1      4   0.910         2002 (1879 to 2350)

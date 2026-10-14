@@ -1,0 +1,27 @@
+# 19-root-entropy: full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy against full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy: 0 missed, 3848766 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 endgame           0.17         1277       7359
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 middlegame        0.41         1868       4527
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 opening           0.78         3830       4910
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 endgame           0.90         6380       7079
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 middlegame        1.65         7694       4672
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 opening           2.43        10925       4500
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     5 endgame           0.18         1277       6967
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     5 middlegame        0.43         1868       4295
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     5 opening           0.77         3830       5005
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     7 endgame           0.91         6380       6976
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     7 middlegame        1.54         7396       4793
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy     7 opening           2.22        10388       4683
+
+## Match at 50ms per move
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy (50ms) vs full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history (50ms)
+games 2536: +970 =571 -995  score 0.495  (95% interval 0.478 to 0.512)  Elo -3 (-15 to +8)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -3.02 (bounds -2.94, 2.94) after 2536 games: H0 accepted: not stronger by the margin

@@ -1,0 +1,27 @@
+# B2-history-gravity: full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8 against full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8: 0 missed, 3901183 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 endgame           0.19         1081       5627
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 middlegame        0.48         1880       3877
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 opening           1.22         5100       4188
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 endgame           0.95         5435       5750
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 middlegame        2.68        10077       3767
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 opening           3.49        12862       3690
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 endgame           0.19         1081       5654
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 middlegame        0.50         1880       3736
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 opening           1.23         5100       4138
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 endgame           0.93         5435       5852
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 middlegame        2.60        10077       3871
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 opening           3.45        12862       3727
+
+## Match at 50ms per move
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8 (50ms) vs full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18 (50ms)
+games 1178: +507 =242 -429  score 0.533  (95% interval 0.508 to 0.558)  Elo +23 (+5 to +41)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 3.02 (bounds -2.94, 2.94) after 1178 games: H1 accepted: the first configuration is stronger

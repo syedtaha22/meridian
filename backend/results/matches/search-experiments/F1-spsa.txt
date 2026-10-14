@@ -1,0 +1,28 @@
+# F1-spsa: full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18 against full+history_malus+malus_percent=50
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 230 of 231 solved
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18: 1 missed, 3895674 nodes
+MISSED PUZZLES
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+history_malus+malus_percent=50     5 endgame           0.20         1051       5178
+full+history_malus+malus_percent=50     5 middlegame        0.51         1797       3496
+full+history_malus+malus_percent=50     5 opening           1.33         5102       3832
+full+history_malus+malus_percent=50     7 endgame           1.08         5734       5285
+full+history_malus+malus_percent=50     7 middlegame        2.36         8037       3399
+full+history_malus+malus_percent=50     7 opening           3.88        13195       3399
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 endgame           0.24         1248       5280
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 middlegame        0.54         1880       3498
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 opening           1.27         5015       3951
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 endgame           0.89         4737       5332
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 middlegame        2.74         9788       3572
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 opening           3.72        12791       3443
+
+## Match at 50ms per move
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18 (50ms) vs full+history_malus+malus_percent=50 (50ms)
+games 2530: +1068 =491 -971  score 0.519  (95% interval 0.502 to 0.537)  Elo +13 (+1 to +26)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 2.98 (bounds -2.94, 2.94) after 2530 games: H1 accepted: the first configuration is stronger

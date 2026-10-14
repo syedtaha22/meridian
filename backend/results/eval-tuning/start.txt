@@ -1,0 +1,5 @@
+798 training and 202 held-out positions
+scale k = 1.4217
+776 numbers in groups: king material pst
+start: train 0.098058 held 0.081333
+held-out error 0.081333, written to /home/syedtaha22/Desktop/chess/backend/results/eval-tuning/start.params

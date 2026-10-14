@@ -1,0 +1,27 @@
+# B4-capture-history: full+capture_history against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+capture_history: 0 missed, 3881672 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.24         1277       5232
+full             5 middlegame        0.52         1868       3608
+full             5 opening           1.00         3830       3828
+full             7 endgame           1.05         6380       6049
+full             7 middlegame        1.92         7694       4015
+full             7 opening           2.81        10925       3893
+full+capture_history     5 endgame           0.20         1258       6178
+full+capture_history     5 middlegame        0.46         1864       4087
+full+capture_history     5 opening           0.94         3844       4095
+full+capture_history     7 endgame           1.01         6361       6306
+full+capture_history     7 middlegame        1.81         7726       4262
+full+capture_history     7 opening           2.70        11003       4075
+
+## Match at 50ms per move
+full+capture_history (50ms) vs full (50ms)
+games 2192: +819 =519 -854  score 0.492  (95% interval 0.474 to 0.510)  Elo -6 (-18 to +7)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.96 (bounds -2.94, 2.94) after 2192 games: H0 accepted: not stronger by the margin

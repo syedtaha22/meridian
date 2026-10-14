@@ -1,0 +1,1 @@
+full+history_malus+malus_percent=50+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18

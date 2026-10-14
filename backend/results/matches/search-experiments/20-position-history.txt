@@ -1,0 +1,27 @@
+# 20-position-history: full+transposition_history against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+transposition_history: 0 missed, 3885446 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.19         1277       6829
+full             5 middlegame        0.42         1868       4485
+full             5 opening           0.82         3830       4644
+full             7 endgame           0.95         6380       6742
+full             7 middlegame        1.76         7694       4381
+full             7 opening           2.57        10925       4247
+full+transposition_history     5 endgame           0.20         1277       6442
+full+transposition_history     5 middlegame        0.48         1868       3879
+full+transposition_history     5 opening           0.89         3830       4322
+full+transposition_history     7 endgame           0.97         6380       6565
+full+transposition_history     7 middlegame        1.80         7682       4264
+full+transposition_history     7 opening           2.62        10925       4178
+
+## Match at 50ms per move
+full+transposition_history (50ms) vs full (50ms)
+games 1446: +544 =319 -583  score 0.487  (95% interval 0.464 to 0.509)  Elo -9 (-25 to +6)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.97 (bounds -2.94, 2.94) after 1446 games: H0 accepted: not stronger by the margin

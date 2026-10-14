@@ -1,0 +1,45 @@
+1353060 training and 338419 held-out positions
+scale k = 1.1731
+16 numbers in groups: passed
+start: train 0.097292 held 0.097554
+epoch  1: 12 changed, train 0.097273 held 0.097535
+epoch  2: 12 changed, train 0.097255 held 0.097516
+epoch  3: 12 changed, train 0.097237 held 0.097498
+epoch  4: 12 changed, train 0.097220 held 0.097482
+epoch  5: 11 changed, train 0.097205 held 0.097464
+epoch  6: 12 changed, train 0.097190 held 0.097449
+epoch  7: 10 changed, train 0.097176 held 0.097434
+epoch  8: 10 changed, train 0.097163 held 0.097420
+epoch  9: 12 changed, train 0.097150 held 0.097407
+epoch 10: 11 changed, train 0.097138 held 0.097394
+epoch 11: 10 changed, train 0.097126 held 0.097381
+epoch 12: 10 changed, train 0.097115 held 0.097370
+epoch 13: 10 changed, train 0.097104 held 0.097359
+epoch 14: 11 changed, train 0.097095 held 0.097348
+epoch 15: 8 changed, train 0.097085 held 0.097338
+epoch 16: 10 changed, train 0.097076 held 0.097329
+epoch 17: 7 changed, train 0.097068 held 0.097322
+epoch 18: 8 changed, train 0.097060 held 0.097312
+epoch 19: 10 changed, train 0.097052 held 0.097305
+epoch 20: 8 changed, train 0.097045 held 0.097298
+epoch 21: 6 changed, train 0.097038 held 0.097291
+epoch 22: 7 changed, train 0.097031 held 0.097284
+epoch 23: 8 changed, train 0.097025 held 0.097279
+epoch 24: 7 changed, train 0.097019 held 0.097273
+epoch 25: 8 changed, train 0.097014 held 0.097268
+epoch 26: 8 changed, train 0.097008 held 0.097262
+epoch 27: 6 changed, train 0.097004 held 0.097258
+epoch 28: 9 changed, train 0.096999 held 0.097253
+epoch 29: 8 changed, train 0.096995 held 0.097249
+epoch 30: 6 changed, train 0.096992 held 0.097246
+epoch 31: 6 changed, train 0.096988 held 0.097243
+epoch 32: 8 changed, train 0.096985 held 0.097240
+epoch 33: 7 changed, train 0.096983 held 0.097238
+epoch 34: 6 changed, train 0.096980 held 0.097237
+epoch 35: 6 changed, train 0.096978 held 0.097235
+epoch 36: 4 changed, train 0.096975 held 0.097233
+epoch 37: 3 changed, train 0.096973 held 0.097232
+epoch 38: 5 changed, train 0.096971 held 0.097231
+epoch 39: 2 changed, train 0.096969 held 0.097229
+epoch 40: 2 changed, train 0.096968 held 0.097227
+held-out error 0.097227, written to /home/syedtaha22/Desktop/chess/backend/results/eval-tuning/R3-passed.params

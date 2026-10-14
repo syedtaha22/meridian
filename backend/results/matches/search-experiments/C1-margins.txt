@@ -1,0 +1,27 @@
+# C1-margins: full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18 against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18: 0 missed, 3899243 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.19         1070       5543
+full             5 middlegame        0.48         1797       3756
+full             5 opening           1.24         5105       4106
+full             7 endgame           1.08         5580       5150
+full             7 middlegame        2.18         7984       3660
+full             7 opening           3.84        13564       3536
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 endgame           0.22         1252       5767
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 middlegame        0.49         1879       3871
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     5 opening           1.21         5017       4158
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 endgame           0.97         5457       5636
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 middlegame        2.62         9962       3809
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18     7 opening           3.59        12825       3576
+
+## Match at 50ms per move
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18 (50ms) vs full (50ms)
+games 3000: +1235 =598 -1167  score 0.511  (95% interval 0.495 to 0.527)  Elo +8 (-3 to +19)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 1.21 (bounds -2.94, 2.94) after 3000 games: no decision

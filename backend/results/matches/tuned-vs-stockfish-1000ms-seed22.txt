@@ -1,0 +1,11 @@
+tuned (1000ms per move) against UCI engine (1000ms per move)
+opponent   games   wins  draws losses    score  illegal   rating from this level
+2000          50     43      1      6   0.870    0/0           2330 (2219 to 2557)
+2200          50     43      1      6   0.870    0/0           2530 (2419 to 2757)
+2400          50     36      1     13   0.730    0/0           2573 (2477 to 2703)
+2600          50     30      1     19   0.610    0/0           2678 (2583 to 2785)
+2800          50     12      7     31   0.310    0/0           2661 (2551 to 2749)
+3000          50      5      6     39   0.160    0/0           2712 (2552 to 2809)
+illegal moves are counted as candidate/opponent, per level
+
+Estimated rating: 2617 (95% interval 2564 to 2671) over 300 games

@@ -1,0 +1,41 @@
+10 of 300 games
+20 of 300 games
+30 of 300 games
+40 of 300 games
+50 of 300 games
+60 of 300 games
+70 of 300 games
+80 of 300 games
+90 of 300 games
+100 of 300 games
+110 of 300 games
+120 of 300 games
+130 of 300 games
+140 of 300 games
+150 of 300 games
+160 of 300 games
+170 of 300 games
+180 of 300 games
+190 of 300 games
+200 of 300 games
+210 of 300 games
+220 of 300 games
+230 of 300 games
+240 of 300 games
+250 of 300 games
+260 of 300 games
+270 of 300 games
+280 of 300 games
+290 of 300 games
+300 of 300 games
+full (1000ms per move) against UCI engine (1000ms per move)
+opponent   games   wins  draws losses    score  illegal   rating from this level
+2000          50     42      2      6   0.860    0/0           2315 (2208 to 2519)
+2200          50     32      3     15   0.670    0/0           2323 (2231 to 2436)
+2400          50     28      1     21   0.570    0/0           2449 (2354 to 2552)
+2600          50     17      1     32   0.350    0/0           2492 (2379 to 2587)
+2800          50      8      4     38   0.200    0/0           2559 (2411 to 2656)
+3000          50      2      3     45   0.070    0/0           2551 (2162 to 2673)
+illegal moves are counted as candidate/opponent, per level
+
+Estimated rating: 2440 (95% interval 2387 to 2494) over 300 games

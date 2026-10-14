@@ -1,0 +1,27 @@
+# B7b-victim-scale-64: full+mvv_scale=64 against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+mvv_scale=64: 0 missed, 3885621 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.28         1277       4608
+full             5 middlegame        0.65         1868       2881
+full             5 opening           1.01         3830       3787
+full             7 endgame           0.96         6380       6644
+full             7 middlegame        1.73         7694       4445
+full             7 opening           2.74        10925       3983
+full+mvv_scale=64     5 endgame           0.35         1277       3694
+full+mvv_scale=64     5 middlegame        0.54         1868       3469
+full+mvv_scale=64     5 opening           0.94         3830       4076
+full+mvv_scale=64     7 endgame           0.92         6380       6954
+full+mvv_scale=64     7 middlegame        1.67         7694       4596
+full+mvv_scale=64     7 opening           2.69        10925       4064
+
+## Match at 50ms per move
+full+mvv_scale=64 (50ms) vs full (50ms)
+games 914: +333 =203 -378  score 0.475  (95% interval 0.447 to 0.504)  Elo -17 (-37 to +3)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.97 (bounds -2.94, 2.94) after 914 games: H0 accepted: not stronger by the margin

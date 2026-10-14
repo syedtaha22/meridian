@@ -1,0 +1,3 @@
+full (50ms) vs full (50ms)
+games 2582: +1027 =503 -1052  score 0.495  (95% interval 0.478 to 0.512)  Elo -3 (-15 to +9)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.97 (bounds -2.94, 2.94) after 2582 games: H0 accepted: not stronger by the margin

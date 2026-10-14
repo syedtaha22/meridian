@@ -1,0 +1,27 @@
+# 14b-buckets: full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets against full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets: 0 missed, 3884133 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 endgame           0.18         1277       7131
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 middlegame        0.41         1868       4508
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 opening           0.77         3830       4991
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 endgame           0.91         6380       7034
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 middlegame        1.50         7694       5115
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 opening           2.27        10925       4818
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     5 endgame           0.18         1277       7214
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     5 middlegame        0.43         1868       4325
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     5 opening           0.76         3830       5023
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     7 endgame           0.86         6380       7399
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     7 middlegame        1.54         7694       4984
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets     7 opening           2.32        10925       4709
+
+## Match at 200ms per move
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets (200ms) vs full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history (200ms)
+games 800: +298 =199 -303  score 0.497  (95% interval 0.467 to 0.527)  Elo -2 (-23 to +19)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -0.85 (bounds -2.94, 2.94) after 800 games: no decision

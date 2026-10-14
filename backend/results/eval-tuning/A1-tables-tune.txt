@@ -1,0 +1,41 @@
+556564 training and 138124 held-out positions
+scale k = 1.2212
+776 numbers in groups: king material pst
+start: train 0.103677 held 0.105236
+epoch  1: 692 changed, train 0.103229 held 0.104829
+epoch  2: 701 changed, train 0.102829 held 0.104468
+epoch  3: 685 changed, train 0.102473 held 0.104171
+epoch  4: 671 changed, train 0.102153 held 0.103929
+epoch  5: 664 changed, train 0.101866 held 0.103691
+epoch  6: 647 changed, train 0.101610 held 0.103485
+epoch  7: 647 changed, train 0.101380 held 0.103296
+epoch  8: 632 changed, train 0.101175 held 0.103134
+epoch  9: 622 changed, train 0.100989 held 0.102952
+epoch 10: 629 changed, train 0.100820 held 0.102810
+epoch 11: 589 changed, train 0.100669 held 0.102678
+epoch 12: 594 changed, train 0.100533 held 0.102556
+epoch 13: 580 changed, train 0.100409 held 0.102460
+epoch 14: 554 changed, train 0.100293 held 0.102370
+epoch 15: 582 changed, train 0.100185 held 0.102287
+epoch 16: 532 changed, train 0.100091 held 0.102197
+epoch 17: 534 changed, train 0.100003 held 0.102131
+epoch 18: 513 changed, train 0.099922 held 0.102075
+epoch 19: 516 changed, train 0.099846 held 0.102018
+epoch 20: 487 changed, train 0.099779 held 0.101987
+epoch 21: 490 changed, train 0.099714 held 0.101928
+epoch 22: 467 changed, train 0.099654 held 0.101859
+epoch 23: 455 changed, train 0.099599 held 0.101803
+epoch 24: 433 changed, train 0.099548 held 0.101756
+epoch 25: 429 changed, train 0.099501 held 0.101746
+epoch 26: 394 changed, train 0.099458 held 0.101721
+epoch 27: 403 changed, train 0.099419 held 0.101688
+epoch 28: 418 changed, train 0.099379 held 0.101671
+epoch 29: 389 changed, train 0.099343 held 0.101629
+epoch 30: 376 changed, train 0.099310 held 0.101607
+epoch 31: 380 changed, train 0.099277 held 0.101603
+epoch 32: 331 changed, train 0.099252 held 0.101576
+epoch 33: 349 changed, train 0.099231 held 0.101556
+epoch 34: 354 changed, train 0.099209 held 0.101539
+epoch 35: 329 changed, train 0.099186 held 0.101545
+epoch 36: 351 changed, train 0.099169 held 0.101555
+held-out error 0.101539, written to /home/syedtaha22/Desktop/chess/backend/results/eval-tuning/A1-tables.params

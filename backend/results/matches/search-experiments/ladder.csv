@@ -1,0 +1,46 @@
+label,new,base,missed,verdict,games,score,llr,nodes_ratio,kept
+01-see,full+see,full,0,H1,1172,0.537,2.98,0.754,1
+02-delta,full+see+delta_pruning,full+see,0,H0,1934,0.491,-2.95,0.855650122187579,0
+03-late-captures,full+see+losing_captures_late,full+see,0,H1,1452,0.53,3.03,1.1399679784275725,1
+04-reverse-futility,full+see+losing_captures_late+reverse_futility,full+see+losing_captures_late,0,H1,390,0.582,2.94,0.37007687758722646,1
+05-futility,full+see+losing_captures_late+reverse_futility+futility,full+see+losing_captures_late+reverse_futility,0,H1,640,0.552,2.99,0.5523130393096836,1
+06-razoring,full+see+losing_captures_late+reverse_futility+futility+razoring+razor_base=800+razor_step=300,full+see+losing_captures_late+reverse_futility+futility,0,no decision,3000,0.504,-0.92,0.9679215941557268,0
+07-late-move-pruning,full+see+losing_captures_late+reverse_futility+futility+late_move_pruning,full+see+losing_captures_late+reverse_futility+futility,0,H0,348,0.425,-2.95,0.8394271454920256,0
+08-lmr-table,full+see+losing_captures_late+reverse_futility+futility+lmr_table,full+see+losing_captures_late+reverse_futility+futility,0,no decision,3000,0.511,1.15,1.1879136378431159,0
+09-iir,full+see+losing_captures_late+reverse_futility+futility+iir,full+see+losing_captures_late+reverse_futility+futility,0,no decision,3000,0.5,-2.1,1.0000361650573217,0
+10-null-margin,full+see+losing_captures_late+reverse_futility+futility+null_margin,full+see+losing_captures_late+reverse_futility+futility,0,no decision,3000,0.506,-0.34,0.829517919785903,1
+11-aspiration,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration,full+see+losing_captures_late+reverse_futility+futility+null_margin,0,H1,1996,0.523,2.96,1.119937219339931,1
+12-singular,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+singular,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration,0,no decision,3000,0.514,2.15,1.0,0
+13-counter-history,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration,0,H1,1078,0.535,2.96,0.9731781376518219,1
+14a-hash-64,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,0,no decision,800,0.506,-0.13,1.0,0
+14b-buckets,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+tt_buckets,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,0,no decision,800,0.497,-0.85,1.0,0
+15-lazy-smp,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+threads=2,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,0,H1,332,0.592,2.95,0.873834953398136,0
+19-root-entropy,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history+root_entropy,full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history,0,H0,2536,0.495,-3.02,0.9665986639465579,0
+20-position-history,full+transposition_history,full,0,H0,1446,0.487,-2.97,0.999519980799232,0
+21-window-variance,full+window_variance,full,1,no decision,3000,0.511,1.02,0.9109164366574664,0
+22-inertness,full+inertness,full,0,H0,2912,0.497,-2.97,0.9917996719868793,0
+23-policy,full+policy,full,1,H0,914,0.474,-3.0,1.0304412176487059,0
+23b-policy-4,full+policy_scale=4,full,0,H0,2594,0.496,-2.98,1.0,0
+23c-policy-48,full+policy_scale=48,full,0,H0,1868,0.492,-2.95,1.0,0
+B1-history-malus,full+history_malus,full,1,H1,1678,0.527,2.97,0.9901996079843195,0
+B1b-malus-half,full+history_malus+malus_percent=50,full,0,H1,1296,0.53,2.96,1.046561862474499,0
+B2-history-gravity,full+history_gravity+history_limit=16384+history_bonus=8,full,0,no decision,3000,0.505,-0.75,0.9999599983999359,0
+B3-piece-history,full+history_piece,full,0,H0,1266,0.483,-2.95,1.0222408896355855,0
+B4-capture-history,full+capture_history,full,0,H0,2192,0.492,-2.96,1.0036401456058244,0
+B5-continuation-two-plies,full+continuation2,full,0,no decision,3000,0.5,-2.14,1.107084283371335,0
+B6a-counter-first,full+counter_first,full,1,H0,972,0.478,-2.99,1.031921276851074,0
+B6b-one-killer,full+killer_count=1,full,0,H0,1438,0.485,-2.98,1.0406416256650266,0
+B7a-victim-scale-8,full+mvv_scale=8,full,0,H0,704,0.467,-2.96,1.0,0
+B7b-victim-scale-64,full+mvv_scale=64,full,0,H0,914,0.475,-2.97,1.0,0
+B8a-bad-capture-50,full+bad_capture_margin=50,full,0,no decision,3000,0.504,-0.97,0.9672786911476459,0
+B8b-bad-capture-100,full+bad_capture_margin=100,full,0,no decision,3000,0.509,0.48,0.9669586783471339,0
+B9-underpromotions-late,full+underpromotions_late,full,1,H0,2300,0.494,-2.96,0.9992399695987839,0
+B1c-malus-25,full+history_malus+malus_percent=50+malus_percent=25,full+history_malus+malus_percent=50,1,H0,2032,0.494,-2.96,1.0,0
+B1d-malus-100,full+history_malus+malus_percent=50+malus_percent=100,full+history_malus+malus_percent=50,1,no decision,3000,0.516,2.45,0.8918267447897352,0
+B2-history-gravity,full+history_malus+malus_percent=50+history_gravity+history_limit=16384+history_bonus=8,full+history_malus+malus_percent=50,1,no decision,3000,0.507,-0.06,0.9308388340873693,0
+B5-continuation-two-plies,full+history_malus+malus_percent=50+continuation2,full+history_malus+malus_percent=50,1,no decision,3000,0.503,-1.13,0.9976637246903508,0
+B8a-bad-capture-50,full+history_malus+malus_percent=50+bad_capture_margin=50,full+history_malus+malus_percent=50,1,H0,624,0.462,-2.95,0.9443002299191575,0
+B8b-bad-capture-100,full+history_malus+malus_percent=50+bad_capture_margin=100,full+history_malus+malus_percent=50,1,no decision,3000,0.502,-1.48,0.9441148112437886,0
+B2-history-gravity,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18,0,H1,1178,0.533,3.02,1.0,1
+B5-continuation-two-plies,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+continuation2,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,0,no decision,3000,0.504,-0.8,0.9571791076337492,0
+B8b-bad-capture-100,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,0,H0,1704,0.49,-2.97,0.9634172129414252,0

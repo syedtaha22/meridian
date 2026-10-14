@@ -1,0 +1,27 @@
+# 03-late-captures: full+see+losing_captures_late against full+see
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+see+losing_captures_late: 0 missed, 5270645 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+see         5 endgame           0.38         1982       5236
+full+see         5 middlegame        2.04         8301       4064
+full+see         5 opening           3.06        12950       4235
+full+see         7 endgame           1.00         5576       5561
+full+see         7 middlegame        9.59        42448       4426
+full+see         7 opening          15.71        70646       4495
+full+see+losing_captures_late     5 endgame           0.37         1904       5186
+full+see+losing_captures_late     5 middlegame        2.04         7912       3883
+full+see+losing_captures_late     5 opening           3.69        14194       3845
+full+see+losing_captures_late     7 endgame           1.13         6233       5538
+full+see+losing_captures_late     7 middlegame        9.72        41646       4283
+full+see+losing_captures_late     7 opening          19.75        87401       4425
+
+## Match at 50ms per move
+full+see+losing_captures_late (50ms) vs full+see (50ms)
+games 1452: +608 =323 -521  score 0.530  (95% interval 0.507 to 0.553)  Elo +21 (+5 to +37)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 3.03 (bounds -2.94, 2.94) after 1452 games: H1 accepted: the first configuration is stronger

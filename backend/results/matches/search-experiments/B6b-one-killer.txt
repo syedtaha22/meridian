@@ -1,0 +1,27 @@
+# B6b-one-killer: full+killer_count=1 against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+killer_count=1: 0 missed, 3883681 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.24         1277       5304
+full             5 middlegame        0.64         1868       2907
+full             5 opening           0.86         3830       4446
+full             7 endgame           1.11         6380       5756
+full             7 middlegame        2.20         7694       3495
+full             7 opening           3.11        10925       3512
+full+killer_count=1     5 endgame           0.25         1286       5096
+full+killer_count=1     5 middlegame        0.58         1866       3212
+full+killer_count=1     5 opening           1.01         3830       3782
+full+killer_count=1     7 endgame           1.14         7262       6355
+full+killer_count=1     7 middlegame        1.88         7752       4117
+full+killer_count=1     7 opening           3.16        11001       3479
+
+## Match at 50ms per move
+full+killer_count=1 (50ms) vs full (50ms)
+games 1438: +547 =302 -589  score 0.485  (95% interval 0.462 to 0.508)  Elo -10 (-26 to +6)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.98 (bounds -2.94, 2.94) after 1438 games: H0 accepted: not stronger by the margin

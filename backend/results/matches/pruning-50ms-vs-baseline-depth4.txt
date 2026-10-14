@@ -1,2 +1,2 @@
-full (50ms) vs baseline (depth 4)
+pruning (50ms) vs baseline (depth 4)
 games 200: +191 =3 -6  score 0.963  (95% interval 0.938 to 0.987)  Elo +564 (+471 to +758)

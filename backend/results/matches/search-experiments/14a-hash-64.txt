@@ -1,0 +1,27 @@
+# 14a-hash-64: full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history against full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history: 0 missed, 3885621 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 endgame           0.18         1277       7186
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 middlegame        0.43         1868       4340
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 opening           0.76         3830       5055
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 endgame           0.84         6380       7587
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 middlegame        1.54         7694       4994
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 opening           2.33        10925       4695
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 endgame           0.18         1277       7186
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 middlegame        0.43         1868       4340
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     5 opening           0.76         3830       5055
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 endgame           0.84         6380       7587
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 middlegame        1.54         7694       4994
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history     7 opening           2.33        10925       4695
+
+## Match at 200ms per move
+full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history (200ms) vs full+see+losing_captures_late+reverse_futility+futility+null_margin+aspiration+counter_history (200ms)
+games 800: +307 =195 -298  score 0.506  (95% interval 0.475 to 0.536)  Elo +4 (-17 to +25)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -0.13 (bounds -2.94, 2.94) after 800 games: no decision

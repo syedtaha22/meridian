@@ -1,0 +1,10 @@
+556564 training and 138124 held-out positions
+scale k = 1.2469
+8 numbers in groups: mobility
+start: train 0.098776 held 0.101046
+epoch  1: 5 changed, train 0.098677 held 0.100905
+epoch  2: 5 changed, train 0.098646 held 0.100880
+epoch  3: 1 changed, train 0.098638 held 0.100867
+epoch  4: 1 changed, train 0.098636 held 0.100859
+epoch  5: 0 changed, train 0.098636 held 0.100859
+held-out error 0.100859, written to /home/syedtaha22/Desktop/chess/backend/results/eval-tuning/A2e-mobility.params

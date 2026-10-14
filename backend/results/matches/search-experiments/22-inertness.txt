@@ -1,0 +1,27 @@
+# 22-inertness: full+inertness against full
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+inertness: 0 missed, 3885621 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full             5 endgame           0.17         1277       7375
+full             5 middlegame        0.42         1868       4396
+full             5 opening           0.78         3830       4922
+full             7 endgame           0.93         6380       6839
+full             7 middlegame        1.66         7694       4629
+full             7 opening           2.44        10925       4471
+full+inertness     5 endgame           0.18         1275       7062
+full+inertness     5 middlegame        0.45         1870       4197
+full+inertness     5 opening           0.78         3829       4897
+full+inertness     7 endgame           0.88         6345       7183
+full+inertness     7 middlegame        1.60         7581       4724
+full+inertness     7 opening           2.40        10868       4536
+
+## Match at 50ms per move
+full+inertness (50ms) vs full (50ms)
+games 2912: +1107 =681 -1124  score 0.497  (95% interval 0.481 to 0.513)  Elo -2 (-13 to +9)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.97 (bounds -2.94, 2.94) after 2912 games: H0 accepted: not stronger by the margin

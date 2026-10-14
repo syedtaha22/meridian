@@ -1,0 +1,28 @@
+# B1d-malus-100: full+history_malus+malus_percent=50+malus_percent=100 against full+history_malus+malus_percent=50
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 230 of 231 solved
+full+history_malus+malus_percent=50+malus_percent=100: 1 missed, 3882442 nodes
+MISSED PUZZLES
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+history_malus+malus_percent=50     5 endgame           0.21         1051       5107
+full+history_malus+malus_percent=50     5 middlegame        0.52         1797       3440
+full+history_malus+malus_percent=50     5 opening           1.27         5102       4029
+full+history_malus+malus_percent=50     7 endgame           1.09         5734       5247
+full+history_malus+malus_percent=50     7 middlegame        2.40         8037       3350
+full+history_malus+malus_percent=50     7 opening           4.10        13195       3221
+full+history_malus+malus_percent=50+malus_percent=100     5 endgame           0.22         1164       5186
+full+history_malus+malus_percent=50+malus_percent=100     5 middlegame        0.52         1785       3459
+full+history_malus+malus_percent=50+malus_percent=100     5 opening           1.28         5015       3909
+full+history_malus+malus_percent=50+malus_percent=100     7 endgame           0.79         4056       5158
+full+history_malus+malus_percent=50+malus_percent=100     7 middlegame        2.24         7823       3491
+full+history_malus+malus_percent=50+malus_percent=100     7 opening           3.67        12170       3318
+
+## Match at 50ms per move
+full+history_malus+malus_percent=50+malus_percent=100 (50ms) vs full+history_malus+malus_percent=50 (50ms)
+games 3000: +1221 =652 -1127  score 0.516  (95% interval 0.500 to 0.531)  Elo +11 (-0 to +22)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 2.45 (bounds -2.94, 2.94) after 3000 games: no decision

@@ -1,0 +1,27 @@
+# B8b-bad-capture-100: full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100 against full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 231 of 231 solved
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100: 0 missed, 3893418 nodes
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 endgame           0.24         1081       4546
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 middlegame        0.62         1880       3054
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     5 opening           1.42         5100       3581
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 endgame           1.11         5435       4891
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 middlegame        2.84        10077       3549
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8     7 opening           3.96        12862       3245
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     5 endgame           0.25         1251       4916
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     5 middlegame        0.59         1882       3216
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     5 opening           1.35         5118       3796
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     7 endgame           0.72         4255       5901
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     7 middlegame        2.94        10118       3443
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100     7 opening           3.96        12963       3275
+
+## Match at 50ms per move
+full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100 (50ms) vs full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8 (50ms)
+games 1704: +659 =351 -694  score 0.490  (95% interval 0.469 to 0.511)  Elo -7 (-22 to +8)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.97 (bounds -2.94, 2.94) after 1704 games: H0 accepted: not stronger by the margin
