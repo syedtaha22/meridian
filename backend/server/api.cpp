@@ -3,10 +3,12 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <random>
 #include <vector>
 
 #include <nlohmann/json.hpp>
 
+#include "chess/book.hpp"
 #include "chess/movegen.hpp"
 #include "chess/position.hpp"
 #include "chess/search.hpp"
@@ -38,6 +40,7 @@ namespace chess::api {
             std::vector<uint64_t> history;
             int depth = 0;
             int64_t time_limit_ms = 0;
+            bool use_book = false;
         };
 
         /**
@@ -108,6 +111,16 @@ namespace chess::api {
                 }
             }
 
+            request.use_book = config.use_book;
+
+            if (doc.contains("book")) {
+                if (!doc["book"].is_boolean()) {
+                    failure = error(422, "\"book\" must be a boolean");
+                    return false;
+                }
+                request.use_book = doc["book"].get<bool>();
+            }
+
             request.time_limit_ms = config.max_time_ms;
 
             if (doc.contains("time_limit_ms")) {
@@ -154,6 +167,14 @@ namespace chess::api {
             return *searcher;
         }
 
+        /**
+         * A random number for the choice among book moves, from a generator of the thread.
+         */
+        uint64_t book_random() {
+            thread_local std::mt19937_64 generator{std::random_device{}()};
+            return generator();
+        }
+
     }  // namespace
 
     Service::Service(Config config) : config_(std::move(config)) {
@@ -163,7 +184,8 @@ namespace chess::api {
         json reply = {
             {"status", "ok"},
             {"engine_version", config_.version},
-            {"architecture", "alpha-beta, PVS, null move, LMR, hash table"},
+            {"architecture", "alpha-beta, PVS, SEE, futility, null move, LMR, hash table, tuned "
+                             "evaluation, opening book"},
             {"max_depth", config_.max_depth},
             {"hash_mb", config_.hash_mb},
         };
@@ -179,6 +201,23 @@ namespace chess::api {
             return failure;
         }
 
+        if (request.use_book) {
+            const auto choice = Book::builtin().pick(request.position, book_random());
+
+            if (choice) {
+                json reply = {
+                    {"move", move_to_uci(choice->move)},
+                    {"score", score_json(choice->score)},
+                    {"depth", choice->depth},
+                    {"nodes", 0},
+                    {"elapsed_ms", 0.0},
+                    {"book", true},
+                };
+
+                return {200, reply.dump()};
+            }
+        }
+
         Searcher &searcher = thread_searcher(config_);
         searcher.options().max_depth = request.depth;
         searcher.options().time_limit_ms = request.time_limit_ms;
@@ -190,6 +229,7 @@ namespace chess::api {
             {"depth", result.depth},
             {"nodes", result.stats.nodes},
             {"elapsed_ms", result.elapsed_ms},
+            {"book", false},
         };
 
         return {200, reply.dump()};

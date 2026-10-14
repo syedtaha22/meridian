@@ -6,8 +6,10 @@
 #include <string>
 #include <vector>
 
+#include "chess/eval.hpp"
 #include "chess/movegen.hpp"
 #include "chess/position.hpp"
+#include "chess/see.hpp"
 
 namespace {
 
@@ -186,6 +188,75 @@ namespace {
         check(move_to_san(castle, move_from_uci(castle, "e1c1")) == "O-O-O", "queen side castling");
     }
 
+    /**
+     * `evaluate` is the tunable evaluation with its default numbers, the legacy numbers agree with
+     * `evaluate_legacy` to rounding, and the evaluation is the same from both sides of the board.
+     */
+    void test_eval_params() {
+        const chess::EvalParams params = chess::EvalParams::defaults();
+        const char *fens[] = {
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+            "8/5pk1/6p1/8/2P5/1K6/8/8 w - - 0 1",
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        };
+
+        for (const char *fen : fens) {
+            const auto pos = chess::Position::from_fen(fen);
+            check(pos.has_value(), std::string("parses ") + fen);
+            check(chess::evaluate(*pos) == chess::evaluate(*pos, params),
+                  "evaluate uses the default numbers");
+            const int legacy = chess::evaluate_legacy(*pos);
+            const int tables = chess::evaluate(*pos, chess::EvalParams::legacy());
+            check(std::abs(legacy - tables) <= 2,
+                  "legacy numbers match the legacy evaluation: " + std::to_string(legacy) +
+                      " and " + std::to_string(tables));
+        }
+
+        // Mirrored positions score the same for the side to move once the terms are on.
+        chess::EvalParams terms = params;
+        terms.bishop_pair[0] = 30;
+        terms.bishop_pair[1] = 40;
+        terms.passed[0][5] = 40;
+        terms.passed[1][5] = 80;
+        terms.doubled[0] = -10;
+        terms.isolated[0] = -12;
+        terms.rook_open[0] = 20;
+        terms.mobility[0][1] = 4;
+        terms.mobility[1][3] = 3;
+        terms.tempo[0] = 10;
+        const auto white = chess::Position::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/"
+                                                     "PPPBBPPP/R3K2R w KQkq - 0 1");
+        const auto black = chess::Position::from_fen("r3k2r/pppbbppp/2n2q1P/1P2p3/3pn3/"
+                                                     "BN2PNP1/P1PPQPB1/R3K2R b KQkq - 0 1");
+        check(white && black, "mirror positions parse");
+        check(chess::evaluate(*white, terms) == chess::evaluate(*black, terms),
+              "the evaluation is the same for a position and its mirror");
+    }
+
+    void test_see() {
+        using namespace chess;
+
+        auto exchange = [](const char *fen, const char *uci) {
+            const Position pos = parse(fen);
+            return see(pos, move_from_uci(pos, uci));
+        };
+
+        check(exchange("k7/8/8/3p4/4P3/8/8/K7 w - - 0 1", "e4d5") == 100,
+              "a pawn takes an undefended pawn: +100");
+        check(exchange("k7/8/4p3/3p4/8/8/3Q4/K7 w - - 0 1", "d2d5") == -800,
+              "a queen takes a pawn defended by a pawn: -800");
+        check(exchange("k7/8/4p3/3p4/4P3/8/8/K7 w - - 0 1", "e4d5") == 0, "a pawn trade is even");
+        check(exchange("k2r4/8/8/3r4/8/8/3R4/K2R4 w - - 0 1", "d2d5") == 500,
+              "two rooks against a defended rook: +500");
+        check(exchange("k7/8/8/3pP3/8/8/8/K7 w - d6 0 1", "e5d6") == 100,
+              "en passant takes a pawn");
+        check(exchange("k7/8/8/8/8/8/3n4/K2R4 w - - 0 1", "d1d2") == 320,
+              "a rook takes an undefended knight");
+        check(exchange("k7/8/8/8/8/2b5/3n4/3R3K w - - 0 1", "d1d2") == -180,
+              "a rook takes a defended knight: 320 - 500");
+    }
+
     void test_hash() {
         using namespace chess;
 
@@ -270,6 +341,8 @@ int main(int argc, char **argv) {
     test_moves();
     test_san();
     test_hash();
+    test_see();
+    test_eval_params();
     test_perft(perft_file, 6, 200000000ULL);
 
     if (failures == 0) {

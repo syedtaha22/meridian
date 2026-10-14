@@ -34,7 +34,8 @@ namespace {
     }
 
     void test_move(const chess::api::Service &service) {
-        json request = {{"fen", kStart}, {"moves", {"e2e4", "e7e5"}}, {"depth", 4}};
+        json request = {
+            {"fen", kStart}, {"moves", {"e2e4", "e7e5"}}, {"depth", 4}, {"book", false}};
         auto reply = service.move(request.dump());
         check(reply.status == 200, "move is 200");
         json body = json::parse(reply.body);
@@ -45,12 +46,44 @@ namespace {
         check(body["depth"].get<int>() >= 1, "depth reported");
         check(body["nodes"].get<int64_t>() > 0, "nodes reported");
         check(body["elapsed_ms"].get<double>() >= 0, "elapsed reported");
+        check(body["book"] == false, "a searched move is not marked as a book move");
 
         // A forced mate is reported as a mate, not as centipawns.
         request = {{"fen", "6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1"}, {"depth", 4}};
         body = json::parse(service.move(request.dump()).body);
         check(body["move"] == "a1a8" && body["score"]["mate"] == 1 && body["score"]["cp"].is_null(),
               "mate in one is reported as mate 1");
+    }
+
+    void test_book(const chess::api::Service &service) {
+        // The start position is in the book: the reply has no search of its own.
+        json request = {{"fen", kStart}};
+        json body = json::parse(service.move(request.dump()).body);
+        check(body["book"] == true && body["nodes"] == 0, "the start position is a book move");
+        check(body["move"].is_string() && body["move"].get<std::string>().size() >= 4,
+              "a book move is a UCI string");
+        check(body["score"].contains("cp") && body["depth"].get<int>() > 0,
+              "a book move has a score and a depth");
+
+        // The request can turn the book off.
+        request = {{"fen", kStart}, {"depth", 3}, {"book", false}};
+        body = json::parse(service.move(request.dump()).body);
+        check(body["book"] == false && body["nodes"].get<int64_t>() > 0,
+              "book false searches the position");
+
+        request = {{"fen", kStart}, {"book", "yes"}};
+        check(service.move(request.dump()).status == 422, "a book field that is not a boolean");
+
+        // The service default can turn the book off, and a request turns it back on.
+        chess::api::Config config;
+        config.use_book = false;
+        const chess::api::Service without(config);
+        request = {{"fen", kStart}, {"depth", 3}};
+        body = json::parse(without.move(request.dump()).body);
+        check(body["book"] == false, "a service without the book searches");
+        request = {{"fen", kStart}, {"book", true}};
+        body = json::parse(without.move(request.dump()).body);
+        check(body["book"] == true, "a request can ask for the book");
     }
 
     void test_validation(const chess::api::Service &service) {
@@ -125,6 +158,7 @@ int main() {
 
     test_health(service);
     test_move(service);
+    test_book(service);
     test_validation(service);
     test_time_limit(service);
     test_http(service);

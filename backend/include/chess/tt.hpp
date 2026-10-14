@@ -1,8 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <vector>
+#include <memory>
 
 #include "chess/types.hpp"
 
@@ -19,7 +20,7 @@ namespace chess {
     };
 
     /**
-     * One slot of the transposition table.
+     * One result of the transposition table, as a value.
      */
     struct TTEntry {
         uint64_t key = 0;
@@ -33,8 +34,11 @@ namespace chess {
     /**
      * @brief A hash table of search results keyed by position hash.
      *
-     * One entry per slot. An entry is replaced when it is from an earlier search
-     * (generation) or when the new result is searched at least as deep.
+     * Several search threads may read and write one table. A slot is two words, the data and
+     * the key combined with the data, so that a slot torn by a concurrent write fails the
+     * check and reads as a miss. An entry is replaced when it is from an earlier search
+     * (generation) or when the new result is searched at least as deep. With two slots to a
+     * bucket, the weaker of the two is replaced.
      */
     class TranspositionTable {
     public:
@@ -58,6 +62,13 @@ namespace chess {
         void clear();
 
         /**
+         * Chooses between one slot and a bucket of two for each position.
+         */
+        void set_buckets(bool two_way) noexcept {
+            two_way_ = two_way;
+        }
+
+        /**
          * Marks the start of a new search, so older entries may be replaced.
          */
         void new_generation() noexcept {
@@ -68,12 +79,10 @@ namespace chess {
          * @brief Looks up a position.
          *
          * @param key Position hash.
-         * @return The entry when the slot holds this position, otherwise null.
+         * @param out Receives the entry on a hit.
+         * @return True when the table holds this position.
          */
-        const TTEntry *probe(uint64_t key) const noexcept {
-            const TTEntry &slot = entries_[key & mask_];
-            return slot.key == key && slot.bound != kBoundNone ? &slot : nullptr;
-        }
+        bool probe(uint64_t key, TTEntry &out) const noexcept;
 
         /**
          * @brief Stores a search result.
@@ -84,41 +93,35 @@ namespace chess {
          * @param depth Search depth that produced the score.
          * @param bound How the score bounds the true value.
          */
-        void store(uint64_t key, Move move, int score, int depth, Bound bound) noexcept {
-            TTEntry &slot = entries_[key & mask_];
-
-            if (slot.key == key && move.is_null()) {
-                move = slot.move;  // keep a known best move when this search found none
-            }
-            if (slot.bound == kBoundNone || slot.generation != generation_ || slot.key == key ||
-                depth >= slot.depth) {
-                slot.key = key;
-                slot.move = move;
-                slot.score = static_cast<int16_t>(score);
-                slot.depth = static_cast<int8_t>(depth);
-                slot.bound = bound;
-                slot.generation = generation_;
-            }
-        }
+        void store(uint64_t key, Move move, int score, int depth, Bound bound) noexcept;
 
         /**
          * Number of slots.
          */
         size_t size() const noexcept {
-            return entries_.size();
+            return mask_ + 1;
         }
 
         /**
          * Size in megabytes.
          */
         size_t megabytes() const noexcept {
-            return entries_.size() * sizeof(TTEntry) / (1024 * 1024);
+            return size() * sizeof(Slot) / (1024 * 1024);
         }
 
     private:
-        std::vector<TTEntry> entries_;
+        struct Slot {
+            std::atomic<uint64_t> check{0};  ///< The key combined with `data`.
+            std::atomic<uint64_t> data{0};
+        };
+
+        static uint64_t pack(Move move, int score, int depth, int bound, int generation) noexcept;
+        static TTEntry unpack(uint64_t key, uint64_t data) noexcept;
+
+        std::unique_ptr<Slot[]> slots_;
         size_t mask_ = 0;
         uint8_t generation_ = 0;
+        bool two_way_ = false;
     };
 
 }  // namespace chess

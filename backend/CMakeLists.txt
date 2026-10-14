@@ -26,6 +26,7 @@ find_package(Threads REQUIRED)
 
 option(CHESS_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(CHESS_RAY_ATTACKS "Walk rays for slider attacks instead of using magic bitboards" OFF)
+option(CHESS_BMI2 "Build for CPUs with BMI2: popcnt and PEXT slider lookups" OFF)
 
 # Dependencies ------------------------------------------------------------
 # The server needs an HTTP library and a JSON library, both header-only. A system
@@ -53,14 +54,22 @@ endif()
 
 add_library(chess_core STATIC
   src/attacks.cpp
+  src/book.cpp
   src/eval.cpp
   src/movegen.cpp
   src/position.cpp
   src/search.cpp
+  src/see.cpp
+  src/policy.cpp
   src/tt.cpp
 )
 target_include_directories(chess_core PUBLIC include)
 target_compile_options(chess_core PRIVATE ${WARNING_FLAGS})
+if(CHESS_BMI2)
+  target_compile_options(chess_core PUBLIC -mpopcnt -mbmi2)
+  target_compile_definitions(chess_core PUBLIC CHESS_PEXT)
+endif()
+
 if(CHESS_RAY_ATTACKS)
   target_compile_definitions(chess_core PUBLIC CHESS_RAY_ATTACKS)
 endif()
@@ -74,6 +83,11 @@ target_link_libraries(position_test PRIVATE chess_core)
 target_compile_options(position_test PRIVATE ${WARNING_FLAGS})
 add_test(NAME position_test
   COMMAND position_test ${CMAKE_SOURCE_DIR}/bench/positions/perft.txt)
+
+add_executable(book_test tests/book_test.cpp)
+target_link_libraries(book_test PRIVATE chess_core)
+target_compile_options(book_test PRIVATE ${WARNING_FLAGS})
+add_test(NAME book_test COMMAND book_test)
 
 add_executable(stress_test tests/stress_test.cpp)
 target_link_libraries(stress_test PRIVATE chess_core)
@@ -105,6 +119,10 @@ add_executable(chess_server server/main.cpp)
 target_link_libraries(chess_server PRIVATE chess_api httplib::httplib Threads::Threads)
 target_compile_options(chess_server PRIVATE ${WARNING_FLAGS})
 
+add_executable(sprt_test tests/sprt_test.cpp)
+target_compile_options(sprt_test PRIVATE ${WARNING_FLAGS})
+add_test(NAME sprt_test COMMAND sprt_test)
+
 add_executable(api_test tests/api_test.cpp)
 target_link_libraries(api_test PRIVATE chess_api httplib::httplib Threads::Threads)
 target_compile_options(api_test PRIVATE ${WARNING_FLAGS})
@@ -112,7 +130,7 @@ add_test(NAME api_test COMMAND api_test)
 
 # Tools -------------------------------------------------------------------
 
-foreach(name print_tree visualize_tree play_match uci_match)
+foreach(name print_tree visualize_tree play_match uci_match mate_check train_policy build_book gen_positions texel_tune)
   add_executable(${name} tools/${name}.cpp)
   target_link_libraries(${name} PRIVATE chess_core Threads::Threads)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})

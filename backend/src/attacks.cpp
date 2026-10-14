@@ -1,5 +1,9 @@
 #include "chess/attacks.hpp"
 
+#ifdef CHESS_PEXT
+#include <immintrin.h>
+#endif
+
 #include <array>
 #include <cstdlib>
 #include <vector>
@@ -123,6 +127,19 @@ namespace chess {
                 references[i] = walk(square, subset, directions);
                 subset = (subset - mask) & mask;  // next subset (carry-rippler)
             }
+
+#ifdef CHESS_PEXT
+            // The lookup is a parallel bit extract of the occupancy, so the table is in the
+            // order of the extracted index and needs no multiplier.
+            for (size_t i = 0; i < size; ++i) {
+                storage[offset + i] = walk(square, _pdep_u64(i, mask), directions);
+            }
+
+            entry.mask = mask;
+            entry.magic = 0;
+            entry.shift = 64 - bits;
+            return;
+#endif
 
             std::vector<Bitboard> table(size);
             std::vector<int> epoch(size, 0);

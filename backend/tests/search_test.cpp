@@ -55,10 +55,10 @@ namespace {
     /**
      * Every puzzle has a forced mate in `moves`. The search should find it, or a shorter one.
      */
-    void test_mates(const std::string &path, int moves) {
+    void test_mates(const std::string &path, int moves, const char *config) {
         const auto lines = read_lines(path);
         check(!lines.empty(), "puzzle file " + path + " is not empty");
-        chess::Searcher searcher(chess::SearchOptions::preset("full", 2 * moves));
+        chess::Searcher searcher(chess::SearchOptions::preset(config, 2 * moves));
         searcher.options().hash_mb = 8;
         int wrong = 0;
 
@@ -79,14 +79,14 @@ namespace {
             }
         }
 
-        check(wrong == 0, "all " + std::to_string(lines.size()) + " mate in " +
-                              std::to_string(moves) + " puzzles solved (" + std::to_string(wrong) +
-                              " missed)");
+        check(wrong == 0, std::string(config) + " solves all " + std::to_string(lines.size()) +
+                              " mate in " + std::to_string(moves) + " puzzles (" +
+                              std::to_string(wrong) + " missed)");
     }
 
     void test_terminal_positions() {
         using namespace chess;
-        Searcher searcher(SearchOptions::preset("full", 4));
+        Searcher searcher(SearchOptions::preset("tuned", 4));
 
         const SearchResult mated = searcher.search(parse("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1"));
         check(mated.best_move.is_null() && mated.score == 0, "stalemate scores 0 with no move");
@@ -104,8 +104,15 @@ namespace {
         const auto lines = read_lines("bench/positions/suite.txt");
         check(!lines.empty(), "suite file is not empty");
 
-        for (const char *name : {"baseline", "ordering", "tt", "quiescence", "iterative", "full"}) {
-            Searcher searcher(SearchOptions::preset(name, 3));
+        for (const char *name :
+             {"baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full", "tuned",
+              "full+delta_pruning+razoring+late_move_pruning", "full+lmr_table+iir+singular",
+              "full+tt_buckets+threads=2", "full+root_entropy+transposition_history",
+              "full+window_variance+inertness+policy",
+              "full+history_malus+history_gravity+history_limit=16384+history_bonus=8",
+              "full+history_piece+capture_history+continuation2+counter_first",
+              "full+killer_count=1+mvv_scale=64+bad_capture_margin=50+underpromotions_late"}) {
+            Searcher searcher(SearchOptions::preset(name, name[0] == 'b' ? 3 : 6));
 
             for (const std::string &line : lines) {
                 const size_t tab = line.rfind('\t');
@@ -173,7 +180,7 @@ namespace {
         // swings.
         const Position tactic =
             parse("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1");
-        Searcher full(SearchOptions::preset("full", 5));
+        Searcher full(SearchOptions::preset("tuned", 5));
         const SearchResult result = full.search(tactic);
         check(move_to_uci(result.best_move) == "f3f7", "full search finds Qxf7 mate");
         check(result.display_score().is_mate, "and reports it as a mate");
@@ -252,9 +259,11 @@ int main(int argc, char **argv) {
     test_limits();
     test_repetition();
 
-    test_mates(data + "/mate_in_1.fen", 1);
-    test_mates(data + "/mate_in_2.fen", 2);
-    test_mates(data + "/mate_in_3.fen", 3);
+    for (const char *config : {"full", "tuned"}) {
+        test_mates(data + "/mate_in_1.fen", 1, config);
+        test_mates(data + "/mate_in_2.fen", 2, config);
+        test_mates(data + "/mate_in_3.fen", 3, config);
+    }
 
     if (failures == 0) {
         std::printf("all search tests passed\n");

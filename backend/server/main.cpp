@@ -2,10 +2,11 @@
 //
 // Endpoints:
 //   GET  /health   engine identity and limits
-//   POST /move     {fen, moves?, depth?, time_limit_ms?} -> best move and score
+//   POST /move     {fen, moves?, depth?, time_limit_ms?, book?} -> best move and score
 //
 // Environment: PORT (8080), CHESS_MAX_DEPTH (12), CHESS_DEFAULT_DEPTH (6),
-// CHESS_MAX_TIME_MS (10000), CHESS_HASH_MB (64), CHESS_THREADS (4).
+// CHESS_MAX_TIME_MS (10000), CHESS_HASH_MB (64), CHESS_THREADS (4), CHESS_BOOK (1; 0 turns the
+// opening book off unless a request asks for it).
 
 #include <csignal>
 #include <cstdlib>
@@ -61,6 +62,7 @@ int main() {
     config.max_time_ms = env_number("CHESS_MAX_TIME_MS", config.max_time_ms);
     config.hash_mb =
         static_cast<size_t>(env_number("CHESS_HASH_MB", static_cast<long>(config.hash_mb)));
+    config.use_book = env_text("CHESS_BOOK", "1") != "0";
     const int port = static_cast<int>(env_number("PORT", 8080));
     const size_t threads = static_cast<size_t>(env_number("CHESS_THREADS", 4));
     const std::string origin = env_text("CHESS_ALLOWED_ORIGIN", "https://syedtaha22.github.io");

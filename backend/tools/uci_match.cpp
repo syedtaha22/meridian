@@ -17,6 +17,8 @@
 // sent `position fen` with the position to move from and `go depth N`. This is the way the
 // original desktop engine is played.
 //
+// `--eval FILE` gives this engine the evaluation numbers of a file written by `texel_tune`.
+//
 // Usage: uci_match [--engine PATH --elo 1500,1800,2100]
 //                  [--opponent-config NAME --opponent-depth N --opponent-time MS]
 //                  [--config full --depth N | --candidate-engine PATH --candidate-depth N
@@ -226,6 +228,7 @@ namespace {
         size_t hash_mb = 16;
         int elo = 0;             // UCI_Elo, when positive
         bool stateless = false;  // is sent the position to move from and not the game so far
+        std::shared_ptr<const EvalParams> eval;  // tuned evaluation of this engine, or null
     };
 
     /**
@@ -239,6 +242,7 @@ namespace {
                     SearchOptions::preset(spec.config, spec.depth > 0 ? spec.depth : 64);
                 options.time_limit_ms = spec.time_ms;
                 options.hash_mb = spec.hash_mb;
+                options.eval_params = spec.eval;
                 searcher_ = std::make_unique<Searcher>(options);
             } else if (!spec.stateless) {
                 engine_ = std::make_unique<UciEngine>(spec.path);
@@ -486,6 +490,16 @@ int main(int argc, char **argv) {
     }
 
     candidate.hash_mb = static_cast<size_t>(args.get_int("hash", 16));
+
+    if (args.has("eval")) {
+        auto params = std::make_shared<EvalParams>(EvalParams::defaults());
+
+        if (!params->load(args.get("eval", ""))) {
+            std::cerr << "cannot read evaluation numbers\n";
+            return 1;
+        }
+        candidate.eval = params;
+    }
 
     PlayerSpec base;
     const bool opponent_internal = args.has("opponent-config");

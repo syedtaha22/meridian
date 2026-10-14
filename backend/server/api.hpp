@@ -13,6 +13,7 @@ namespace chess::api {
         int default_depth = 6;        ///< Depth used when a request names none.
         int64_t max_time_ms = 10000;  ///< Longest search a request may ask for.
         size_t hash_mb = 64;          ///< Transposition table size per worker thread.
+        bool use_book = true;         ///< Play opening book moves when the position is in the book.
         std::string version = "0.1.0";
     };
 
@@ -50,8 +51,10 @@ namespace chess::api {
         /**
          * @brief Chooses a move.
          *
-         * Request: `{fen, moves?, depth?, time_limit_ms?}`, where `moves` are UCI moves
-         * played since `fen`. Reply: `{move, score: {cp, mate}, depth, nodes, elapsed_ms}`.
+         * Request: `{fen, moves?, depth?, time_limit_ms?, book?}`, where `moves` are UCI moves
+         * played since `fen`, and `book` turns the opening book on or off for the request. Reply:
+         * `{move, score: {cp, mate}, depth, nodes, elapsed_ms, book}`, where `book` is true when
+         * the move came from the opening book, which has no search of its own (`nodes` is 0).
          *
          * @param body JSON request body.
          * @return 200 with the reply, 400 for malformed JSON, or 422 for an invalid or

@@ -7,11 +7,13 @@
 // Writes move_selection.csv with one row per configuration, depth and position.
 //
 // Usage: bench_search --configs baseline,full --depths 1,2,3,4 [--suite FILE] [--cpu N]
+//                     [--eval FILE]
 //                     [--rounds N] [--out FILE]
 
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -57,6 +59,16 @@ int main(int argc, char **argv) {
     const int rounds = args.get_int("rounds", 3);
     const std::string out_path = args.get("out", "move_selection.csv");
     const int hash_mb = args.get_int("hash", 16);
+    std::shared_ptr<EvalParams> eval;
+
+    if (args.has("eval")) {
+        eval = std::make_shared<EvalParams>(EvalParams::defaults());
+
+        if (!eval->load(args.get("eval", ""))) {
+            std::cerr << "cannot read evaluation numbers\n";
+            return 1;
+        }
+    }
 
     if (!bench::pin_to_cpu(args.get_int("cpu", -1))) {
         std::cerr << "warning: could not pin to the requested CPU\n";
@@ -70,6 +82,7 @@ int main(int argc, char **argv) {
             for (const std::string &config : configs) {
                 SearchOptions options = SearchOptions::preset(config, depth);
                 options.hash_mb = static_cast<size_t>(hash_mb);
+                options.eval_params = eval;
                 Searcher searcher(options);
 
                 for (size_t i = 0; i < suite.size(); ++i) {

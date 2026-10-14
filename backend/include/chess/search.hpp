@@ -2,10 +2,12 @@
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "chess/eval.hpp"
 #include "chess/position.hpp"
 #include "chess/tt.hpp"
 #include "chess/types.hpp"
@@ -39,14 +41,79 @@ namespace chess {
         bool lmr = true;                  ///< Search late quiet moves to a reduced depth.
         bool check_extension = true;      ///< Search one ply deeper when in check.
 
+        // Techniques that were tested by a match. The ones that helped are on by default, and the
+        // others stay as switches with their results recorded.
+        bool see = true;                   ///< Skip losing captures in quiescence by exchange.
+        bool delta_pruning = false;        ///< Skip captures that cannot reach alpha.
+        bool losing_captures_late = true;  ///< Try captures that lose material after quiet moves.
+        bool reverse_futility = true;    ///< Return early when the static score is far above beta.
+        bool futility = true;            ///< Skip quiet moves near the leaves that cannot help.
+        bool razoring = false;           ///< Go to quiescence when the static score is far low.
+        bool late_move_pruning = false;  ///< Skip late quiet moves at shallow depth.
+        bool lmr_table = false;          ///< Reduce late moves by a logarithmic table.
+        bool iir = false;                ///< Reduce a deep node that has no table move.
+        bool null_margin = true;         ///< Reduce more in the null move at a large margin.
+        bool aspiration = true;          ///< Search each pass in a window around the last.
+        bool singular = false;           ///< Extend a table move that is better than the rest.
+        bool counter_history = true;     ///< Order quiet moves by the move before them.
+        bool tt_buckets = false;         ///< Two slots to a table bucket.
+
+        // Experiments.
+        bool root_entropy = false;           ///< Drop root moves of low probability.
+        bool transposition_history = false;  ///< Share cutoff statistics between move orders.
+        bool window_variance = false;        ///< Size aspiration windows by score variance.
+        bool inertness = false;              ///< Reduce nodes that a one-ply probe finds inert.
+        bool policy = false;                 ///< Order moves by a learned policy.
+        bool legacy_eval = false;            ///< Evaluate with the tables before the tuning.
+        bool history_malus = false;          ///< Lower the score of quiet moves that failed to cut.
+        bool history_gravity = true;         ///< Decay a history entry in proportion to its size.
+        bool history_piece = false;          ///< Key history by piece and destination.
+        bool capture_history = false;        ///< Order captures by a learned table.
+        bool continuation2 = false;          ///< A second continuation score, two plies back.
+        bool counter_first = false;          ///< Try the counter move before the killers.
+        bool underpromotions_late = false;   ///< Try knight, rook and bishop promotions late.
+
+        // Parameters of the techniques above, in centipawns unless stated otherwise.
+        int rfp_margin = 107;    ///< Reverse futility margin per ply.
+        int futility_base = 74;  ///< Futility margin at depth 1, plus `futility_step` each ply.
+        int futility_step = 214;
+        int razor_base = 350;  ///< Razoring margin at depth 1, plus `razor_step` each ply.
+        int razor_step = 150;
+        int delta_margin = 200;      ///< Value added to a victim in delta pruning.
+        int lmp_base = 3;            ///< Late move pruning count: base + depth squared.
+        int lmr_scale = 225;         ///< Divisor of the reduction table, in hundredths.
+        int iir_depth = 6;           ///< Smallest depth of the internal iterative reduction.
+        int null_margin_step = 246;  ///< Margin over beta that adds one ply to the null move.
+        int aspiration_delta = 18;   ///< Half width of the first aspiration window.
+        int singular_depth = 8;      ///< Smallest depth of a singular extension search.
+        int threads = 1;             ///< Search threads that share the table.
+        int policy_scale = 16;       ///< Ordering score of one logit of the policy, in 1/64.
+        int killer_count = 2;        ///< Killer moves kept for each ply, 1 or 2.
+        int mvv_scale = 16;          ///< Ordering weight of the victim against the attacker.
+        int bad_capture_margin = 0;  ///< A capture is late when its exchange is below minus this.
+        int history_limit = 16384;   ///< Largest history score.
+        int history_bonus = 8;       ///< History change of a cutoff, per ply squared.
+        int malus_percent = 100;     ///< Malus of a failed move, in percent of the bonus.
+        int continuation_limit = 16000;  ///< Largest continuation score.
+
+        /**
+         * Numbers of the tunable evaluation, or null for the evaluation of the engine.
+         */
+        std::shared_ptr<const EvalParams> eval_params;
+
         /**
          * @brief A named configuration, from the plain search to the full one.
          *
-         * Names: "baseline", "ordering", "tt", "quiescence", "iterative", "full".
+         * Names: "baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full"
+         * and "tuned". "full" is the engine of step 08, with the evaluation, margins and history
+         * of that step. "tuned" is the engine of step 09, and its values are the defaults of
+         * these options. A name
+         * may be followed by changes joined with `+`: a switch (`+see`, `+see=0`) or a parameter
+         * (`+rfp_margin=100`), as in `full+delta_pruning+razoring`.
          *
-         * @param name Preset name.
+         * @param name Preset name, with its changes.
          * @param max_depth Nominal depth in plies.
-         * @return The options, or the full configuration for an unknown name.
+         * @return The options, or the tuned configuration for an unknown name.
          */
         static SearchOptions preset(std::string_view name, int max_depth);
     };
@@ -125,8 +192,10 @@ namespace chess {
          * @brief Creates a searcher.
          *
          * @param options Configuration, which can be changed later through `options`.
+         * @param table A table to share with other searchers, or null for a table of its own.
          */
-        explicit Searcher(SearchOptions options = {});
+        explicit Searcher(SearchOptions options = {},
+                          std::shared_ptr<TranspositionTable> table = nullptr);
 
         /**
          * The configuration; change it between searches, not during one.
@@ -141,7 +210,9 @@ namespace chess {
          * @param root Position to search.
          * @param history Hashes of the positions played before `root`, oldest first,
          *        used to recognize repetitions.
-         * @return Best move, score, line and counters.
+         * @return Best move, score, line and counters. With `options().threads` above 1, the
+         *         other threads search the same position into the shared table, and the
+         *         result is that of this thread.
          */
         SearchResult search(const Position &root, const std::vector<uint64_t> &history = {});
 
@@ -170,19 +241,37 @@ namespace chess {
         void set_trace(std::vector<TraceNode> *sink, int max_ply, size_t max_nodes);
 
     private:
+        SearchResult search_one(const Position &root, const std::vector<uint64_t> &history);
+        void prepare_table();
+        void clear_own_tables();
         int negamax(const Position &pos, int depth, int alpha, int beta, int ply, bool pv,
                     bool allow_null, int trace_parent, Move trace_move);
         int quiescence(const Position &pos, int alpha, int beta, int ply, int trace_parent,
                        Move trace_move);
         int search_root(const Position &pos, int depth, int alpha, int beta);
         bool should_stop();
+
+        int static_evaluation(const Position &pos) const noexcept {
+            if (options_.eval_params) {
+                return evaluate(pos, *options_.eval_params);
+            }
+            return options_.legacy_eval ? evaluate_legacy(pos) : evaluate(pos);
+        }
+
         bool is_repetition(const Position &pos) const;
         int trace_enter(int parent, Move move, int ply, int depth, int alpha, int beta,
                         bool quiescence, bool null_move);
         void trace_leave(int id, int score, int total, int searched, bool cutoff, bool from_tt);
 
         SearchOptions options_;
-        TranspositionTable tt_;
+        std::shared_ptr<TranspositionTable> tt_;
+
+        // Helper threads of a search with `options.threads` above 1. They stop when the flag of
+        // the main searcher is set, and a helper has its own searcher.
+        std::vector<std::unique_ptr<Searcher>> helpers_;
+        std::atomic<bool> helpers_stop_{false};
+        const std::atomic<bool> *parent_stop_ = nullptr;
+        int helper_id_ = 0;
         SearchStats stats_;
 
         std::atomic<bool> stop_{false};
@@ -197,6 +286,36 @@ namespace chess {
         int history_[2][kSquares][kSquares];
         Move pv_[kMaxPly][kMaxPly];
         int pv_length_[kMaxPly];
+
+        // The move excluded from the search of a node (singular extension), by ply.
+        Move excluded_[kMaxPly];
+
+        // The piece and destination of the move that led to each ply, or -1.
+        int stack_[kMaxPly];
+
+        // History by piece and destination, captures by piece, destination and victim, and the
+        // continuation score two plies back.
+        int piece_history_[12][kSquares];
+        int capture_history_[12][kSquares][6];
+        std::vector<int16_t> continuation2_;
+
+        // The move that refuted the move before it, and the score of a move after its
+        // predecessor, both by the (piece, destination) of the predecessor.
+        Move counter_move_[12 * kSquares];
+        std::vector<int16_t> continuation_;
+
+        // Reductions of the logarithmic table, by depth and by number of moves searched.
+        uint8_t lmr_table_[64][64];
+
+        // Scores of the root moves of the last completed pass, for the root entropy test.
+        std::vector<std::pair<uint16_t, int>> root_scores_;
+        std::vector<std::pair<uint16_t, int>> new_root_scores_;
+
+        // Cutoff counts by position and move, shared between move orders (experiment).
+        std::vector<int16_t> position_history_;
+
+        // Running change of the score between passes, for the window of the next pass.
+        double volatility_ = 20;
 
         Move root_best_;
         int root_best_score_ = 0;

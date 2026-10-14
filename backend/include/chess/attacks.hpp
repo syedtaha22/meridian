@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef CHESS_PEXT
+#include <immintrin.h>
+#endif
+
 #include "chess/types.hpp"
 
 namespace chess {
@@ -89,7 +93,11 @@ namespace chess {
         return rook_attacks_rays(square, occupied);
 #else
         const detail::Magic &m = detail::rook_magics[square];
+#ifdef CHESS_PEXT
+        return m.attacks[_pext_u64(occupied, m.mask)];
+#else
         return m.attacks[((occupied & m.mask) * m.magic) >> m.shift];
+#endif
 #endif
     }
 
@@ -105,7 +113,11 @@ namespace chess {
         return bishop_attacks_rays(square, occupied);
 #else
         const detail::Magic &m = detail::bishop_magics[square];
+#ifdef CHESS_PEXT
+        return m.attacks[_pext_u64(occupied, m.mask)];
+#else
         return m.attacks[((occupied & m.mask) * m.magic) >> m.shift];
+#endif
 #endif
     }
 
