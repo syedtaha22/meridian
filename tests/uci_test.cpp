@@ -19,7 +19,17 @@
 // UCI tests: scripted sessions through the engine, with the replies checked.
 #include <chrono>
 #include <cstdio>
+
+// GCC 12 reports a false -Wmaybe-uninitialized from inside <regex> in the sanitizer build.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include <regex>
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 #include <sstream>
 #include <string>
 
@@ -213,6 +223,12 @@ namespace {
         position.make_move(chess::move_from_uci(position, "e2e4"));
         position.make_move(chess::move_from_uci(position, "e7e5"));
         check(!chess::move_from_uci(position, best_move(out)).is_null(), "the move is legal");
+
+        // A position without a legal move is answered at once, and a late `ponderhit` adds nothing.
+        const std::string mated = session("position fen 7k/5Q2/6K1/8/8/8/8/8 b - - 0 1\ngo ponder "
+                                          "wtime 1000 btime 1000\nponderhit\n");
+        check(count(mated, "bestmove ") == 1,
+              "ponderhit after a position without a move is ignored");
 
         const std::string stopped =
             session("position startpos\ngo ponder wtime 2000 btime 2000\nstop\nponderhit\n");

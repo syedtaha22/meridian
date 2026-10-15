@@ -60,6 +60,7 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── syzygy.cpp
 │   ├── eval.cpp
 │   ├── eval_defaults.inc        # the tuned numbers, as texel_tune found them
+│   ├── magic_numbers.inc        # multipliers of the slider tables, written by find_magics
 │   ├── see.cpp
 │   ├── book.cpp
 │   ├── book_data.inc            # moves written by build_book
@@ -82,6 +83,7 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── sprt.hpp                 # the sequential probability ratio test on pairs of games
 │   ├── mate_check.cpp           # solves the mate puzzles with one preset
 │   ├── build_book.cpp           # builds the opening book by searching the opening tree
+│   ├── find_magics.cpp          # searches the magic numbers of the slider attacks and prints them
 │   ├── gen_positions.cpp        # self-play positions with results, for tuning
 │   ├── texel_tune.cpp           # tunes the evaluation numbers against the results
 │   ├── train_nnue.cpp           # trains the network of the evaluation from self-play positions
@@ -164,6 +166,7 @@ Three options change the build:
 - `-DCHESS_RAY_ATTACKS=ON` finds slider attacks by walking rays instead of with magic bitboards,
   which the benchmarks use to measure what the tables give.
 - `-DCHESS_SANITIZE=ON` builds with AddressSanitizer and UBSan.
+- `-DCHESS_STATIC=ON` links the programs statically, for the release archives.
 - `-DCHESS_BMI2=ON` builds for CPUs with BMI2 (`-mpopcnt -mbmi2`) and finds slider attacks with
   PEXT, which gives 5% to 12% more positions per second. The default build stays portable.
 

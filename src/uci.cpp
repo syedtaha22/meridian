@@ -397,6 +397,12 @@ namespace chess::uci {
             return;
         }
 
+        // A position without a move was answered when `go ponder` came, and has no search to
+        // continue.
+        if (!searching_.load()) {
+            return;
+        }
+
         // The search of the pondered position goes on as a search with the clock. The table
         // keeps what the first search learned.
         quiet_.store(true);

@@ -102,49 +102,20 @@ namespace chess {
             return mask;
         }
 
-        /**
-         * Deterministic generator, so the magic numbers found do not change between runs.
-         */
-        struct Random {
-            uint64_t state = 0x9E3779B97F4A7C15ULL;
-
-            uint64_t next() {
-                state ^= state >> 12;
-                state ^= state << 25;
-                state ^= state >> 27;
-                return state * 0x2545F4914F6CDD1DULL;
-            }
-
-            /**
-             * Few set bits: sparse numbers make better multipliers.
-             */
-            uint64_t sparse() {
-                return next() & next() & next();
-            }
-        };
+        // The multipliers of the rook and the bishop on each square, written by
+        // tools/find_magics. `position_test` checks every lookup against walking the rays.
+#include "magic_numbers.inc"
 
         /**
-         * Finds a multiplier that maps every occupancy subset of `mask` to a slot
-         * of a table of 2^bits entries without two subsets with different attacks
-         * sharing a slot, and fills `table` with the attack sets.
+         * Fills the attack table of one square for a multiplier from the tables above.
          */
         template <size_t N>
         void init_magic(Square square, const std::array<Direction, N> &directions,
                         detail::Magic &entry, std::vector<Bitboard> &storage, size_t offset,
-                        Random &random) {
+                        uint64_t magic) {
             const Bitboard mask = relevant_mask(square, directions);
             const int bits = __builtin_popcountll(mask);
             const size_t size = size_t{1} << bits;
-
-            std::vector<Bitboard> occupancies(size);
-            std::vector<Bitboard> references(size);
-            Bitboard subset = 0;
-
-            for (size_t i = 0; i < size; ++i) {
-                occupancies[i] = subset;
-                references[i] = walk(square, subset, directions);
-                subset = (subset - mask) & mask;  // next subset (carry-rippler)
-            }
 
 #ifdef CHESS_PEXT
             // The lookup is a parallel bit extract of the occupancy, so the table is in the
@@ -156,45 +127,20 @@ namespace chess {
             entry.mask = mask;
             entry.magic = 0;
             entry.shift = 64 - bits;
-            return;
-#endif
+            static_cast<void>(magic);
+#else
+            Bitboard subset = 0;
 
-            std::vector<Bitboard> table(size);
-            std::vector<int> epoch(size, 0);
-            int attempt = 0;
-
-            while (true) {
-                const Bitboard magic = random.sparse();
-
-                if (__builtin_popcountll((mask * magic) >> 56) < 6) {
-                    continue;
-                }
-
-                ++attempt;
-                bool ok = true;
-
-                for (size_t i = 0; i < size && ok; ++i) {
-                    const size_t index = (occupancies[i] * magic) >> (64 - bits);
-
-                    if (epoch[index] != attempt) {
-                        epoch[index] = attempt;
-                        table[index] = references[i];
-                    } else if (table[index] != references[i]) {
-                        ok = false;
-                    }
-                }
-
-                if (ok) {
-                    entry.mask = mask;
-                    entry.magic = magic;
-                    entry.shift = 64 - bits;
-
-                    for (size_t i = 0; i < size; ++i) {
-                        storage[offset + i] = table[i];
-                    }
-                    return;
-                }
+            for (size_t i = 0; i < size; ++i) {
+                storage[offset + (subset * magic >> (64 - bits))] =
+                    walk(square, subset, directions);
+                subset = (subset - mask) & mask;  // next subset (carry-rippler)
             }
+
+            entry.mask = mask;
+            entry.magic = magic;
+            entry.shift = 64 - bits;
+#endif
         }
 
         void init_tables() {
@@ -243,18 +189,17 @@ namespace chess {
             // Both tables live in static storage so that entries can hold pointers into them.
             static std::vector<Bitboard> rook_storage(102400);
             static std::vector<Bitboard> bishop_storage(5248);
-            Random random;
             size_t rook_offset = 0;
             size_t bishop_offset = 0;
 
             for (Square square = 0; square < kSquares; ++square) {
                 init_magic(square, kRookDirections, detail::rook_magics[square], rook_storage,
-                           rook_offset, random);
+                           rook_offset, kRookMagics[square]);
                 detail::rook_magics[square].attacks = rook_storage.data() + rook_offset;
                 rook_offset += size_t{1} << (64 - detail::rook_magics[square].shift);
 
                 init_magic(square, kBishopDirections, detail::bishop_magics[square], bishop_storage,
-                           bishop_offset, random);
+                           bishop_offset, kBishopMagics[square]);
                 detail::bishop_magics[square].attacks = bishop_storage.data() + bishop_offset;
                 bishop_offset += size_t{1} << (64 - detail::bishop_magics[square].shift);
             }

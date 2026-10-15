@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(chess_engine LANGUAGES C CXX)
+# The version of the project is the one of the engine, which include/version.hpp defines.
+file(STRINGS include/version.hpp MERIDIAN_VERSION_LINE REGEX "kEngineVersion")
+string(REGEX REPLACE ".*\"([0-9]+\\.[0-9]+\\.[0-9]+)\".*" "\\1" MERIDIAN_VERSION
+  "${MERIDIAN_VERSION_LINE}")
+
+project(chess_engine VERSION ${MERIDIAN_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,6 +27,11 @@ find_package(Threads REQUIRED)
 option(CHESS_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(CHESS_RAY_ATTACKS "Walk rays for slider attacks instead of using magic bitboards" OFF)
 option(CHESS_BMI2 "Build for CPUs with BMI2: popcnt and PEXT slider lookups" OFF)
+option(CHESS_STATIC "Link the programs statically, for a binary that runs on any Linux" OFF)
+
+if(CHESS_STATIC)
+  add_link_options(-static)
+endif()
 
 # Libraries ---------------------------------------------------------------
 
@@ -112,6 +122,29 @@ add_executable(meridian src/main.cpp)
 target_link_libraries(meridian PRIVATE chess_uci)
 target_compile_options(meridian PRIVATE ${WARNING_FLAGS})
 
+# Installation and packaging -----------------------------------------------
+
+include(GNUInstallDirs)
+set(MERIDIAN_DOCDIR ${CMAKE_INSTALL_DATAROOTDIR}/doc/meridian)
+
+install(TARGETS meridian RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES LICENSE README.md ENGINE.md VERSIONING.md
+  DESTINATION ${MERIDIAN_DOCDIR})
+install(FILES third_party/fathom/LICENSE
+  DESTINATION ${MERIDIAN_DOCDIR}/licenses RENAME fathom-LICENSE)
+
+# `cpack` makes meridian-VERSION-SYSTEM-ARCHITECTURE.tar.gz from the installation.
+set(CPACK_GENERATOR TGZ)
+set(CPACK_PACKAGE_NAME meridian)
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_VENDOR "Syed Taha")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A UCI chess engine")
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+set(CPACK_PACKAGE_FILE_NAME
+  "meridian-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_SOURCE_GENERATOR "")
+include(CPack)
+
 add_executable(timeman_test tests/timeman_test.cpp)
 target_link_libraries(timeman_test PRIVATE chess_core)
 target_compile_options(timeman_test PRIVATE ${WARNING_FLAGS})
@@ -133,3 +166,9 @@ foreach(name play_match uci_match mate_check train_policy build_book gen_positio
   target_link_libraries(${name} PRIVATE chess_core Threads::Threads)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
 endforeach()
+
+# Finds the magic numbers of src/magic_numbers.inc. It stands alone, so that it can write the file
+# that the library needs to be built.
+add_executable(find_magics tools/find_magics.cpp)
+target_include_directories(find_magics PRIVATE include)
+target_compile_options(find_magics PRIVATE ${WARNING_FLAGS})

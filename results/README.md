@@ -176,9 +176,18 @@ the ratio to step 08 was checked in one interleaved run of `bench_search`.
   evaluation on the same targets, and the quantized network differs from the floating point one
   by 0.49cp. Against the network of the first two rounds it scores 0.616 over 264 games (+82
   Elo, H1).
-- The network is faster than the evaluation that it replaces. One evaluation takes 93ns against
-  133ns, and the engine searches 4.2 million positions per second against 3.1 million. At depth 10
-  step 10 takes 10.0ms against 19.0ms, with 38,145 positions against 52,792.
+- The search is faster with the network. In one interleaved run of `bench_search` (the two
+  presets alternate over seven rounds, so that the state of the machine affects both alike), step
+  10 searches 4.0 million positions per second against 3.8 million, and it visits fewer positions
+  for the same depth: 38,146 against 52,792 at depth 10. Depth 10 takes 9.6ms against 14.1ms,
+  which is 1.46 times faster. The rows of step 10 in the tables come from a later session than
+  the rows before it, and the machine was faster in it (perft runs at 63 against 44 million
+  positions per second), so only the interleaved run compares the two steps.
+- Against Stockfish 19 at 1000ms per move, limited with `UCI_LimitStrength` and `UCI_Elo`, step 10
+  scores 0.86, 0.86, 0.53, 0.32 and 0.15 at the levels 2400, 2600, 2800, 3000 and 3190 (250 games
+  in [one run](matches/network/network-vs-stockfish-1000ms-seed21.txt)). The rating is 2848, with
+  a 95% interval of 2793 to 2902, against 2587 for step 09. The scale is calibrated by Stockfish
+  for longer time controls, so the number applies at this speed and on this machine.
 - The network misses one of the 1,404 mate puzzles at the depth of the puzzle (a mate in 3), and
   solves it two plies deeper. Step 09 solves all of them, so the rule of the puzzle test rejects
   the network by one puzzle. [search_test](../tests/search_test.cpp) allows two plies more for

@@ -86,7 +86,15 @@ recent cutoffs count more than old ones.
 
 ### Evaluation
 
-The engine scores a position from material and from the placement of the pieces. Each piece has
+The engine evaluates a position with a neural network. The network takes the 768 combinations of
+a piece and a square, and gives 128 values for each side. It is trained on 15.8 million positions
+from games of the engine against itself, in three rounds, each round played with the network of
+the round before. The values of a position follow the search: a move changes a few rows of the
+weights, so that an evaluation costs one pass over 256 integers. The network is compiled into the
+library, and the option `EvalFile` loads another one.
+
+The evaluation that came before it is a hand written one, and the preset `tuned` keeps it. It
+scores a position from material and from the placement of the pieces. Each piece has
 a value, and a piece-square table adds a bonus or a penalty for the square the piece stands on.
 Four more terms refine the score: the bishop pair, a rook on an open or half-open file, the
 number of squares that a knight, bishop, rook or queen can reach, and the right to move.
@@ -111,6 +119,8 @@ The tests check the engine in three ways:
 
 - Move generation gives the published perft counts for six reference positions.
 - The search solves 1,404 puzzles that ask for mate in one, two or three moves.
+- Scripted UCI sessions check the handshake, the options, every kind of limit, a stop, pondering,
+  the book, the tablebases and bad input, and the time budget stays inside the clock.
 - The engine runs under AddressSanitizer and UBSan.
 
 ## Performance
@@ -141,6 +151,7 @@ The table shows the mean time per move at depth 3, 5 and 6. Step 00 is the origi
 | 07 | Null move, late move reductions, killers, history, check extension | 0.51ms | 2.5ms | 5.8ms |
 | 08 | Exchange evaluation, futility, aspiration windows, counter moves | 0.25ms | 0.71ms | 1.4ms |
 | 09 | Tuned evaluation, tuned margins, history gravity | 0.25ms | 0.96ms | 1.8ms |
+| 10 | Network evaluation, history malus, margins tuned for them | 0.13ms | 0.38ms | 0.97ms |
 
 Three results stand out:
 
@@ -155,16 +166,20 @@ Three results stand out:
 - The tuned evaluation of step 09 is slower per position (133ns for one evaluation against 62ns),
   and it plays much better. It scores 65% of the points against step 08 at 50ms per move (236
   wins, 49 draws, 115 losses in 400 games). Depth 10 takes 19ms.
+- The network of step 10 scores 82% of the points against step 09 at 50ms per move (63 wins, 6
+  draws, 11 losses in 80 games). It searches faster per position and visits fewer positions, so
+  depth 10 takes 1.46 times less time in an interleaved run. Step 10 was measured in a later
+  session than the rows above it, so the rows are not a comparison, and the interleaved run is.
 
 ### Summary
 
 | Measure | Result |
 |---|---|
-| Depth 10 from an opening position | 34ms on one core |
-| Search speed | 2.8 million nodes per second |
+| Depth 10 from an opening position | 18ms on one core |
+| Search speed | 4.0 million nodes per second |
 | Move generation (perft) | 44 million nodes per second |
-| Against step 08 (the engine before the tuning), 50ms per move | 236 wins, 49 draws, 115 losses in 400 games (65.1% of the points) |
-| Rating against Stockfish 19, 1s per move | about 2600 Elo (interval 2564 to 2640, 600 games) |
+| Against step 09 (the engine before the network), 50ms per move | 63 wins, 6 draws, 11 losses in 80 games (82% of the points) |
+| Rating against Stockfish 19, 1s per move | about 2850 Elo (interval 2793 to 2902, 250 games) |
 
 The rating uses Stockfish's `UCI_Elo` scale. Stockfish calibrates this scale for longer time
 controls. The number therefore is not a rating-list rating. It applies at this speed and on this
@@ -172,17 +187,17 @@ machine.
 
 ### Comparison with Stockfish
 
-Per node, the engine is faster than Stockfish. It searches 2.8 million nodes per second.
+Per node, the engine is faster than Stockfish. It searches 4.0 million nodes per second.
 Stockfish searches 0.6 to 1.6 million nodes per second. Both numbers are measured on one core.
 
-Stockfish needs far fewer nodes to reach a given depth, 23 times fewer at depth 10. Its search is
-more selective, and its evaluation is a neural network.
+Stockfish needs far fewer nodes to reach a given depth, 17 times fewer at depth 10. Its search is
+more selective, and its network is larger.
 
 | Depth | Stockfish 19 | This engine | Stockfish nodes | Engine nodes |
 |---:|---:|---:|---:|---:|
-| 5 | 0.8ms | 0.96ms | 469 | 2,687 |
-| 7 | 1.1ms | 3.3ms | 893 | 9,458 |
-| 10 | 2.5ms | 19ms | 2,300 | 52,792 |
+| 5 | 0.8ms | 0.38ms | 469 | 1,610 |
+| 7 | 1.1ms | 1.9ms | 893 | 7,290 |
+| 10 | 2.5ms | 10ms | 2,300 | 38,146 |
 
 ## Getting started
 
@@ -199,6 +214,23 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
+### Installing
+
+```bash
+cmake --install build --prefix /usr/local     # meridian in bin, the licenses in share/doc/meridian
+```
+
+A release archive is made from a static build, which runs on any Linux of the same architecture:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCHESS_STATIC=ON
+cmake --build build -j
+(cd build && cpack)                          # build/meridian-VERSION-Linux-ARCHITECTURE.tar.gz
+```
+
+The workflow [release.yml](.github/workflows/release.yml) does this for x86-64 and ARM64 and
+attaches the archives to a published release.
+
 ## UCI engine
 
 The build produces `meridian`, the engine as a UCI program, for any chess program that speaks
@@ -208,7 +240,11 @@ size, the threads and the opening book.
 ```bash
 build/meridian               # reads UCI commands on standard input
 build/meridian bench         # nodes searched and speed on the built-in positions
+build/meridian help          # the commands and the options
 ```
+
+The options are `Hash`, `Threads`, `MoveOverhead`, `OwnBook`, `Ponder`, `EvalFile` and
+`SyzygyPath`.
 
 The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 
@@ -242,30 +278,27 @@ causes the cutoff 94% of the time. The results of the 25 ideas that were tested 
 
 ### Close to a gain
 
-- **Window sized by the variance of the score.** It scored 0.511 over 3,000 games with 9% fewer
-  nodes, and it missed one of the 1,404 mate puzzles.
-- **Retuning every evaluation group on 1.35 million positions.** It scored 0.574 over 452 games
-  and was not kept, because it reports one mate-in-3 puzzle two plies later than the puzzle test
-  allows. The engine plays the mating move.
-- **Logarithmic reduction table, singular extensions, razoring and internal iterative
-  reduction.** None of them reached an answer in 3,000 games. They are candidates for a second
-  test on the tuned evaluation.
-- **Lazy SMP.** Two threads score 59% of the points against one thread. It needs a deployment
-  that gives each request its own cores.
+- **Razoring.** It scored 0.520 over 2,088 games on the network, and was not kept, because it
+  missed 17 of the mate puzzles.
+- **Retuning the network.** The third round of training added 82 Elo, so a fourth round, played
+  by the engine with that network, may add more.
+- **Lazy SMP.** Two threads score 59% of the points against one thread. The `Threads` option of
+  the UCI program turns it on, and a match with the network at several thread counts is open.
 
 ### Infrastructure
 
 - A table of 64MB against 16MB and two-way buckets show no difference at 200ms per move. They
   need a longer time control to be measured.
-- SPSA tuning with more games. The 120 iterations of 48 games moved the margins of step 09 and
-  gained 13 Elo, so a longer run may give more.
+- SPSA tuning with more games. The 120 iterations of 48 games moved the margins of step 10 and
+  gained 18 Elo, so a longer run may give more.
 - A build with PEXT lookups, which is 5% to 12% faster, for hosts known to have BMI2.
-- Syzygy endgame tablebases. The data files are large.
+- A measurement of the tablebases. A match from random openings reaches few positions with five
+  pieces, so it needs starting positions from endgames.
 
 ### Evaluation
 
-- A neural evaluation (NNUE) with an incremental accumulator. This is the largest single step
-  and the most work.
+- A larger network, or two layers. A network with 256 values for each side overfit 9.7 million
+  positions, and may not with more data.
 - Passed pawn and pawn structure terms. They did not pass a match with the numbers that the
   tuning found, and need better starting values or more data.
 - A learned move policy. A model of 196 features trained on self-play ordered moves worse than
