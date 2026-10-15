@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-10-15T07:29:20+05:00",
+  "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900HX",
+  "cpu_flags": ["avx", "avx2", "fma", "bmi2", "popcnt"],
+  "pinned_cpu": 8,
+  "pinned_cpu_max_khz": "5400000",
+  "pinned_cpu_cur_khz_at_start": "800780",
+  "governor": "powersave",
+  "load_average": "20.58 14.45 6.25",
+  "logical_cpus": 32,
+  "kernel": "7.0.0-38-generic",
+  "compiler": "g++ (Ubuntu 12.4.0-2ubuntu1~24.04.1) 12.4.0",
+  "cmake_build_type": "Release",
+  "cmake_cxx_flags_release": "-O3 -DNDEBUG",
+  "git_head": "92205bd71fc36d2683b76586cc1f3de66bd87e80",
+  "git_dirty": true
+}

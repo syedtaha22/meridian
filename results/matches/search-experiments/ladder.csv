@@ -44,3 +44,10 @@ B8b-bad-capture-100,full+history_malus+malus_percent=50+bad_capture_margin=100,f
 B2-history-gravity,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18,0,H1,1178,0.533,3.02,1.0,1
 B5-continuation-two-plies,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+continuation2,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,0,no decision,3000,0.504,-0.8,0.9571791076337492,0
 B8b-bad-capture-100,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8+bad_capture_margin=100,full+reverse_futility+futility+null_margin+aspiration+rfp_margin=107+futility_base=74+futility_step=214+null_margin_step=246+aspiration_delta=18+history_gravity+history_limit=16384+history_bonus=8,0,H0,1704,0.49,-2.97,0.9634172129414252,0
+N1-razoring,network+razoring,network,17,H1,2088,0.52,2.95,0.8602138220694923,0
+N2-log-reduction,network+lmr_table,network,2,H0,1552,0.489,-2.96,1.1018709431080567,0
+N3-iir,network+iir,network,1,H0,2752,0.497,-3.01,1.0,0
+N4-singular,network+singular,network,1,H0,2562,0.496,-2.96,1.0,0
+N5-hash-64,network,network,1,no decision,3000,0.503,-1.28,1.0,0
+N6-malus,network+history_malus+malus_percent=50,network,1,H1,1216,0.529,2.95,0.9786177930507828,1
+N7-window-variance,network+history_malus+malus_percent=50+window_variance,network+history_malus+malus_percent=50,2,H0,1330,0.487,-2.99,0.9650409676160747,0

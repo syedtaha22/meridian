@@ -47,7 +47,7 @@ The score is the wins plus half the draws, divided by the number of games, with 
 A search without iterative deepening cannot use a clock, so it plays to a fixed depth
 ([run_matches.sh](../scripts/run_matches.sh)). The match files name each side by its preset:
 baseline is step 01, ordering is step 03, tt is step 04, quiescence is step 05, iterative is
-step 06, pruning is step 07, full is step 08 and tuned is step 09.
+step 06, pruning is step 07, full is step 08, tuned is step 09 and network is step 10.
 
 Every change of step 08 was tested alone against the engine without it. A change had to solve all
 1,404 mate puzzles (no more than its base did, for the changes of step 09), and then play a match
@@ -160,6 +160,49 @@ the ratio to step 08 was checked in one interleaved run of `bench_search`.
   18) score 0.511 against the old margins on the tuned evaluation over 3,000 games, which the
   test accepted by its rule for a tie. History gravity scores 0.533 over 1,178 games and was
   kept. The history malus scores 0.506 over 3,000 games, misses one puzzle, and was not kept.
+
+### Step 10
+
+- **Step 10** replaces the hand written evaluation with a network, and adds the history malus and
+  the margins tuned with them (`network` preset). It scores 82% of the points against step 09 at
+  50ms per move (63 wins, 6 draws, 11 losses in 80 games, 95% interval 0.747 to 0.903, about
+  +269 Elo), and the test accepted H1 after 80 games. The malus and the margins add +32 Elo to
+  the network with the margins of step 09 (0.546 over 768 games, H1).
+- The network has 768 inputs, 128 values for each side and 16-bit weights. It was trained in
+  three rounds on positions from self-play, each round played by the engine with the network of
+  the round before: 4.9 million positions from step 09, 4.9 million with the first network, and
+  6.0 million with the second, 15.8 million in all (80% of the games for training, the rest held
+  out). The third round has a held-out loss of 0.01424 against 0.01942 for the hand written
+  evaluation on the same targets, and the quantized network differs from the floating point one
+  by 0.49cp. Against the network of the first two rounds it scores 0.616 over 264 games (+82
+  Elo, H1).
+- The network is faster than the evaluation that it replaces. One evaluation takes 93ns against
+  133ns, and the engine searches 4.2 million positions per second against 3.1 million. At depth 10
+  step 10 takes 10.0ms against 19.0ms, with 38,145 positions against 52,792.
+- The network misses one of the 1,404 mate puzzles at the depth of the puzzle (a mate in 3), and
+  solves it two plies deeper. Step 09 solves all of them, so the rule of the puzzle test rejects
+  the network by one puzzle. [search_test](../tests/search_test.cpp) allows two plies more for
+  the `network` preset.
+- Tablebases: 3, 4 and 5 piece Syzygy tables give 0.507 over 3,000 games (no decision, +5 Elo
+  with an interval of -6 to +16). The games start from random openings and rarely reach a
+  position with five pieces or fewer, so the result shows no harm and does not measure a gain.
+- Retests of the search techniques on the network, each against the base before it:
+
+  | Change | Score | Games | Result |
+  |:-------|------:|------:|:-------|
+  | Razoring | 0.520 | 2,088 | H1, 17 puzzles missed, not kept |
+  | Logarithmic reduction table | 0.489 | 1,552 | not better |
+  | Internal iterative reduction | 0.497 | 2,752 | not better, one puzzle missed |
+  | Singular extensions | 0.496 | 2,562 | not better, one puzzle missed |
+  | Table of 64MB against 16MB | 0.503 | 3,000 | no decision |
+  | History malus at half strength | 0.529 | 1,216 | H1, kept, one puzzle missed like the base |
+  | Window sized by the variance | 0.487 | 1,330 | not better, two puzzles missed |
+  | SPSA margins, on top of the history malus | 0.525 | 1,580 | H1 |
+
+  The history malus and the SPSA margins are part of the `network` preset. The malus is at 50%,
+  and the margins are reverse futility 54, futility 55 and 218, null move step 271 and aspiration
+  24. They were tuned on the network, with SPSA of 120 iterations, and the margins scored 0.525
+  over 1,580 games against the network with the malus.
 
 ### Stockfish
 

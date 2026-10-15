@@ -235,9 +235,9 @@ namespace chess {
     }  // namespace
 
     SearchOptions SearchOptions::preset(std::string_view name, int max_depth) {
-        // The options default to the tuned engine. The steps before it have the evaluation,
+        // The options default to the engine of step 10. The steps before it have the evaluation,
         // margins and history that they had.
-        const SearchOptions tuned;
+        const SearchOptions current;
         SearchOptions o;
         o.max_depth = max_depth;
         o.nnue = nullptr;
@@ -248,6 +248,8 @@ namespace chess {
         o.null_margin_step = 200;
         o.aspiration_delta = 25;
         o.history_gravity = false;
+        o.history_malus = false;
+        o.malus_percent = 100;
         o.history_limit = 700000;
         o.history_bonus = 1;
         o.move_ordering = false;
@@ -334,17 +336,31 @@ namespace chess {
         o.aspiration = true;
         o.counter_history = true;
 
-        if (base == "tuned" || base == "network") {
-            o.nnue = base == "network" ? tuned.nnue : nullptr;
-            o.legacy_eval = tuned.legacy_eval;
-            o.rfp_margin = tuned.rfp_margin;
-            o.futility_base = tuned.futility_base;
-            o.futility_step = tuned.futility_step;
-            o.null_margin_step = tuned.null_margin_step;
-            o.aspiration_delta = tuned.aspiration_delta;
-            o.history_gravity = tuned.history_gravity;
-            o.history_limit = tuned.history_limit;
-            o.history_bonus = tuned.history_bonus;
+        if (base == "tuned") {
+            // Step 09: the tuned evaluation, and the margins and history that were tuned with it.
+            o.legacy_eval = current.legacy_eval;
+            o.rfp_margin = 107;
+            o.futility_base = 74;
+            o.futility_step = 214;
+            o.null_margin_step = 246;
+            o.aspiration_delta = 18;
+            o.history_gravity = current.history_gravity;
+            o.history_limit = current.history_limit;
+            o.history_bonus = current.history_bonus;
+        } else if (base == "network") {
+            // Step 10: the network, the history malus, and the margins tuned with them.
+            o.nnue = current.nnue;
+            o.legacy_eval = current.legacy_eval;
+            o.rfp_margin = current.rfp_margin;
+            o.futility_base = current.futility_base;
+            o.futility_step = current.futility_step;
+            o.null_margin_step = current.null_margin_step;
+            o.aspiration_delta = current.aspiration_delta;
+            o.history_gravity = current.history_gravity;
+            o.history_limit = current.history_limit;
+            o.history_bonus = current.history_bonus;
+            o.history_malus = current.history_malus;
+            o.malus_percent = current.malus_percent;
         }
 
         return finish();

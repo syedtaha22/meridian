@@ -69,7 +69,9 @@ namespace {
 
         SearchOptions options = SearchOptions::preset(config, depth);
         options.hash_mb = 16;
-        options.nnue = network;
+        if (network) {
+            options.nnue = network;
+        }
         Searcher searcher(options);
         int ahead_white = 0;
         int ahead_black = 0;

@@ -1,0 +1,28 @@
+# N2-log-reduction: network+lmr_table against network
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 229 of 231 solved
+network+lmr_table: 2 missed, 4088428 nodes
+MISSED PUZZLES
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+network          5 endgame           0.22         1091       5057
+network          5 middlegame        0.51         1740       3411
+network          5 opening           0.89         3316       3724
+network          7 endgame           0.75         3596       4787
+network          7 middlegame        2.65         8737       3297
+network          7 opening           3.97        13857       3488
+network+lmr_table     5 endgame           0.27         1253       4668
+network+lmr_table     5 middlegame        0.56         1820       3239
+network+lmr_table     5 opening           1.05         3624       3453
+network+lmr_table     7 endgame           0.93         4068       4353
+network+lmr_table     7 middlegame        2.93         9728       3323
+network+lmr_table     7 opening           4.18        15062       3603
+
+## Match at 50ms per move
+network+lmr_table (50ms) vs network (50ms)
+games 1552: +568 =382 -602  score 0.489  (95% interval 0.467 to 0.511)  Elo -8 (-23 to +7)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -2.96 (bounds -2.94, 2.94) after 1552 games: H0 accepted: not stronger by the margin

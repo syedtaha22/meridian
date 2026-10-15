@@ -101,7 +101,9 @@ namespace {
             options.time_limit_ms = side.time_ms;
             options.hash_mb = side.hash_mb;
             options.eval_params = side.eval;
-            options.nnue = side.nnue;
+            if (side.nnue) {
+                options.nnue = side.nnue;
+            }
             return Searcher(options);
         };
 

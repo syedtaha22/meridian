@@ -1,0 +1,28 @@
+# N3-iir: network+iir against network
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 230 of 231 solved
+network+iir: 1 missed, 3803678 nodes
+MISSED PUZZLES
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+network          5 endgame           0.21         1091       5288
+network          5 middlegame        0.48         1740       3657
+network          5 opening           0.81         3316       4070
+network          7 endgame           0.68         3596       5252
+network          7 middlegame        2.36         8737       3696
+network          7 opening           3.52        13857       3935
+network+iir      5 endgame           0.19         1091       5643
+network+iir      5 middlegame        0.47         1740       3692
+network+iir      5 opening           0.84         3316       3926
+network+iir      7 endgame           0.69         3596       5192
+network+iir      7 middlegame        2.34         8737       3741
+network+iir      7 opening           3.61        13857       3834
+
+## Match at 50ms per move
+network+iir (50ms) vs network (50ms)
+games 2752: +1050 =637 -1065  score 0.497  (95% interval 0.481 to 0.514)  Elo -2 (-13 to +9)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -3.01 (bounds -2.94, 2.94) after 2752 games: H0 accepted: not stronger by the margin

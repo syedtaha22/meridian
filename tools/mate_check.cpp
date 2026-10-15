@@ -76,7 +76,9 @@ int main(int argc, char **argv) {
         SearchOptions options = SearchOptions::preset(config, 2 * moves + extra_plies);
         options.hash_mb = hash_mb;
         options.eval_params = eval;
-        options.nnue = network;
+        if (network) {
+            options.nnue = network;
+        }
         Searcher searcher(options);
 
         while (std::getline(in, fen)) {

@@ -111,7 +111,9 @@ int main(int argc, char **argv) {
                 SearchOptions options = SearchOptions::preset(config, depth);
                 options.hash_mb = static_cast<size_t>(hash_mb);
                 options.eval_params = eval;
-                options.nnue = network;
+                if (network) {
+                    options.nnue = network;
+                }
                 Searcher searcher(options);
 
                 for (size_t i = 0; i < suite.size(); ++i) {

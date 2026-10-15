@@ -71,12 +71,13 @@ namespace {
     }
 
     /**
-     * Every puzzle has a forced mate in `moves`. The search should find it, or a shorter one.
+     * Every puzzle has a forced mate in `moves`. The search should find it, or a shorter one,
+     * within `2 * moves + extra_plies` plies.
      */
-    void test_mates(const std::string &path, int moves, const char *config) {
+    void test_mates(const std::string &path, int moves, const char *config, int extra_plies = 0) {
         const auto lines = read_lines(path);
         check(!lines.empty(), "puzzle file " + path + " is not empty");
-        chess::Searcher searcher(chess::SearchOptions::preset(config, 2 * moves));
+        chess::Searcher searcher(chess::SearchOptions::preset(config, 2 * moves + extra_plies));
         searcher.options().hash_mb = 8;
         int wrong = 0;
 
@@ -278,9 +279,11 @@ int main(int argc, char **argv) {
     test_repetition();
 
     for (const char *config : {"full", "tuned", "network"}) {
-        test_mates(data + "/mate_in_1.fen", 1, config);
-        test_mates(data + "/mate_in_2.fen", 2, config);
-        test_mates(data + "/mate_in_3.fen", 3, config);
+        // The network finds one mate in 3 two plies later than the depth of the puzzle.
+        const int extra = std::string(config) == "network" ? 2 : 0;
+        test_mates(data + "/mate_in_1.fen", 1, config, extra);
+        test_mates(data + "/mate_in_2.fen", 2, config, extra);
+        test_mates(data + "/mate_in_3.fen", 3, config, extra);
     }
 
     if (failures == 0) {

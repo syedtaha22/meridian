@@ -258,9 +258,10 @@ the earliest. The report adds the likelihood ratio, its bounds and the decision.
 A preset name takes changes after it, joined with `+`: a switch (`tuned+razoring`,
 `tuned+see=0`) or a number (`tuned+rfp_margin=100`). Every technique that was tested is a switch
 in `SearchOptions`, on if it won its match and off otherwise. The presets are `baseline`,
-`ordering`, `tt`, `quiescence`, `iterative`, `pruning`, `full` and `tuned`. Each preset is a
-step of [results](results/README.md): `full` is step 08, with the evaluation, margins and history
-that it had, and `tuned` is step 09, which is also what `SearchOptions` defaults to.
+`ordering`, `tt`, `quiescence`, `iterative`, `pruning`, `full`, `tuned` and `network`. Each preset
+is a step of [results](results/README.md): `full` is step 08, with the evaluation, margins and
+history that it had, `tuned` is step 09, and `network` is step 10, which is also what
+`SearchOptions` defaults to.
 
 ```bash
 build/mate_check --config tuned+razoring

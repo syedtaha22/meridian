@@ -279,7 +279,9 @@ namespace {
                 options.time_limit_ms = spec.time_ms;
                 options.hash_mb = spec.hash_mb;
                 options.eval_params = spec.eval;
-                options.nnue = spec.nnue;
+                if (spec.nnue) {
+                    options.nnue = spec.nnue;
+                }
                 searcher_ = std::make_unique<Searcher>(options);
             } else if (!spec.stateless) {
                 engine_ = std::make_unique<UciEngine>(spec.path);

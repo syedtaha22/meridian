@@ -93,7 +93,7 @@ namespace chess {
         bool policy = false;                 ///< Order moves by a learned policy.
         bool legacy_eval = false;            ///< Evaluate with the tables before the tuning.
         bool tablebases = true;              ///< Use Syzygy tables, when some are loaded.
-        bool history_malus = false;          ///< Lower the score of quiet moves that failed to cut.
+        bool history_malus = true;           ///< Lower the score of quiet moves that failed to cut.
         bool history_gravity = true;         ///< Decay a history entry in proportion to its size.
         bool history_piece = false;          ///< Key history by piece and destination.
         bool capture_history = false;        ///< Order captures by a learned table.
@@ -102,17 +102,17 @@ namespace chess {
         bool underpromotions_late = false;   ///< Try knight, rook and bishop promotions late.
 
         // Parameters of the techniques above, in centipawns unless stated otherwise.
-        int rfp_margin = 107;    ///< Reverse futility margin per ply.
-        int futility_base = 74;  ///< Futility margin at depth 1, plus `futility_step` each ply.
-        int futility_step = 214;
+        int rfp_margin = 54;     ///< Reverse futility margin per ply.
+        int futility_base = 55;  ///< Futility margin at depth 1, plus `futility_step` each ply.
+        int futility_step = 218;
         int razor_base = 350;  ///< Razoring margin at depth 1, plus `razor_step` each ply.
         int razor_step = 150;
         int delta_margin = 200;        ///< Value added to a victim in delta pruning.
         int lmp_base = 3;              ///< Late move pruning count: base + depth squared.
         int lmr_scale = 225;           ///< Divisor of the reduction table, in hundredths.
         int iir_depth = 6;             ///< Smallest depth of the internal iterative reduction.
-        int null_margin_step = 246;    ///< Margin over beta that adds one ply to the null move.
-        int aspiration_delta = 18;     ///< Half width of the first aspiration window.
+        int null_margin_step = 271;    ///< Margin over beta that adds one ply to the null move.
+        int aspiration_delta = 24;     ///< Half width of the first aspiration window.
         int singular_depth = 8;        ///< Smallest depth of a singular extension search.
         int threads = 1;               ///< Search threads that share the table.
         std::vector<Move> root_moves;  ///< The moves the root is limited to; empty means all.
@@ -122,7 +122,7 @@ namespace chess {
         int bad_capture_margin = 0;    ///< A capture is late when its exchange is below minus this.
         int history_limit = 16384;     ///< Largest history score.
         int history_bonus = 8;         ///< History change of a cutoff, per ply squared.
-        int malus_percent = 100;       ///< Malus of a failed move, in percent of the bonus.
+        int malus_percent = 50;        ///< Malus of a failed move, in percent of the bonus.
         int continuation_limit = 16000;  ///< Largest continuation score.
 
         /**

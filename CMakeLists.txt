@@ -41,6 +41,10 @@ add_library(chess_core STATIC
   src/tt.cpp
   third_party/fathom/tbprobe.c
 )
+# nnue_builtin.cpp includes src/nnue_net.inc when it exists, which the compiler dependencies
+# do not see until the first build that finds it.
+set_source_files_properties(src/nnue_builtin.cpp PROPERTIES OBJECT_DEPENDS
+  ${CMAKE_SOURCE_DIR}/src/nnue_net.inc)
 target_include_directories(chess_core PUBLIC include)
 target_include_directories(chess_core PRIVATE third_party/fathom)
 target_link_libraries(chess_core PUBLIC Threads::Threads)

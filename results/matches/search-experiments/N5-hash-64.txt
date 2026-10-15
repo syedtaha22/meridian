@@ -1,0 +1,28 @@
+# N5-hash-64: network against network
+
+## Mate puzzles
+mate in 1: 325 of 325 solved
+mate in 2: 848 of 848 solved
+mate in 3: 230 of 231 solved
+network: 1 missed, 3803678 nodes
+MISSED PUZZLES
+
+## Nodes at a fixed depth (mean over the 15 suite positions)
+config       depth region         ms/move   nodes/move       knps
+network          5 endgame           0.20         1091       5415
+network          5 middlegame        0.48         1740       3632
+network          5 opening           0.85         3316       3923
+network          7 endgame           0.71         3596       5065
+network          7 middlegame        2.49         8737       3514
+network          7 opening           3.55        13857       3909
+network          5 endgame           0.20         1091       5415
+network          5 middlegame        0.48         1740       3632
+network          5 opening           0.85         3316       3923
+network          7 endgame           0.71         3596       5065
+network          7 middlegame        2.49         8737       3514
+network          7 opening           3.55        13857       3909
+
+## Match at 50ms per move
+network (50ms) vs network (50ms)
+games 3000: +1161 =698 -1141  score 0.503  (95% interval 0.488 to 0.519)  Elo +2 (-9 to +13)
+SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -1.28 (bounds -2.94, 2.94) after 3000 games: no decision
