@@ -36,9 +36,11 @@ PARAMETERS = {
 }
 
 
-# The techniques that the presets `tuned` and `network` have on. The start values above are the
-# defaults of `SearchOptions`, and a base can name another value with `+name=value`.
+# The techniques that the presets `tuned` and `network` have on, and the one that only `network`
+# has on and that has parameters here. The start values above are the defaults of `SearchOptions`,
+# and a base can name another value with `+name=value`.
 DEFAULT_ON = {"reverse_futility", "futility", "null_margin", "aspiration"}
+NETWORK_ON = {"lmr_table"}
 
 
 def parameters_of(base):
@@ -48,8 +50,13 @@ def parameters_of(base):
     changes = base.split("+")[1:]
     flags = {c.split("=")[0] for c in changes if not c.endswith("=0")}
 
+    off = {c.split("=")[0] for c in changes if c.endswith("=0")}
+
     if base.split("+")[0] in ("tuned", "network"):
-        flags |= DEFAULT_ON - {c.split("=")[0] for c in changes if c.endswith("=0")}
+        flags |= DEFAULT_ON - off
+
+    if base.split("+")[0] == "network":
+        flags |= NETWORK_ON - off
     explicit = {c.split("=")[0]: int(c.split("=")[1]) for c in changes if "=" in c}
     found = []
 

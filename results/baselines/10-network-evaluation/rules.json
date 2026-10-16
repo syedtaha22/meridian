@@ -1,20 +1,20 @@
 {
   "attacks": "magic",
   "perft": [
-    {"name": "initial", "depth": 5, "nodes": 4865609, "correct": true, "seconds": [0.0746, 0.0766, 0.0776, 0.0777, 0.0783, 0.0777, 0.0769], "nps": {"n": 7, "median": 62675607, "min": 62111602, "p25": 62629061, "p75": 63381496, "mean": 63147758, "cv_percent": 1.50}},
-    {"name": "kiwipete", "depth": 4, "nodes": 4085603, "correct": true, "seconds": [0.0650, 0.0646, 0.0645, 0.0643, 0.0642, 0.0639, 0.0640], "nps": {"n": 7, "median": 63515500, "min": 62853228, "p25": 63281834, "p75": 63758874, "mean": 63484242, "cv_percent": 0.55}},
-    {"name": "position-3", "depth": 6, "nodes": 11030083, "correct": true, "seconds": [0.2056, 0.2035, 0.2030, 0.2046, 0.2019, 0.2028, 0.2030], "nps": {"n": 7, "median": 54335114, "min": 53656352, "p25": 54062103, "p75": 54369105, "mean": 54210834, "cv_percent": 0.55}},
-    {"name": "position-4", "depth": 5, "nodes": 15833292, "correct": true, "seconds": [0.2613, 0.2611, 0.2621, 0.2608, 0.2627, 0.2624, 0.2617], "nps": {"n": 7, "median": 60503694, "min": 60282504, "p25": 60375683, "p75": 60620157, "mean": 60498741, "cv_percent": 0.25}},
-    {"name": "position-5", "depth": 4, "nodes": 2103487, "correct": true, "seconds": [0.0334, 0.0337, 0.0330, 0.0331, 0.0334, 0.0332, 0.0331], "nps": {"n": 7, "median": 63372692, "min": 62363898, "p25": 62992423, "p75": 63551610, "mean": 63216234, "cv_percent": 0.68}},
-    {"name": "position-6", "depth": 4, "nodes": 3894594, "correct": true, "seconds": [0.0574, 0.0575, 0.0580, 0.0572, 0.0582, 0.0570, 0.0572], "nps": {"n": 7, "median": 67861666, "min": 66936287, "p25": 67450188, "p75": 68126410, "mean": 67750682, "cv_percent": 0.72}}
+    {"name": "initial", "depth": 5, "nodes": 4865609, "correct": true, "seconds": [0.0722, 0.0764, 0.0767, 0.0788, 0.0770, 0.0762, 0.0793], "nps": {"n": 7, "median": 63416349, "min": 61360847, "p25": 62464202, "p75": 63751838, "mean": 63511854, "cv_percent": 2.85}},
+    {"name": "kiwipete", "depth": 4, "nodes": 4085603, "correct": true, "seconds": [0.0668, 0.0654, 0.0646, 0.0638, 0.0635, 0.0635, 0.0638], "nps": {"n": 7, "median": 63989420, "min": 61130180, "p25": 62861621, "p75": 64184664, "mean": 63360220, "cv_percent": 1.74}},
+    {"name": "position-3", "depth": 6, "nodes": 11030083, "correct": true, "seconds": [0.2044, 0.2093, 0.2065, 0.2083, 0.2104, 0.2067, 0.2203], "nps": {"n": 7, "median": 52953508, "min": 50075254, "p25": 52561162, "p75": 53392907, "mean": 52699433, "cv_percent": 2.22}},
+    {"name": "position-4", "depth": 5, "nodes": 15833292, "correct": true, "seconds": [0.2693, 0.2651, 0.2639, 0.2636, 0.2631, 0.2620, 0.2617], "nps": {"n": 7, "median": 60054838, "min": 58788632, "p25": 59858281, "p75": 60307753, "mean": 59953941, "cv_percent": 0.89}},
+    {"name": "position-5", "depth": 4, "nodes": 2103487, "correct": true, "seconds": [0.0328, 0.0342, 0.0337, 0.0341, 0.0339, 0.0342, 0.0337], "nps": {"n": 7, "median": 61989729, "min": 61438914, "p25": 61563410, "p75": 62402104, "mean": 62201277, "cv_percent": 1.35}},
+    {"name": "position-6", "depth": 4, "nodes": 3894594, "correct": true, "seconds": [0.0583, 0.0576, 0.0593, 0.0578, 0.0587, 0.0578, 0.0582], "nps": {"n": 7, "median": 66942125, "min": 65727992, "p25": 66572380, "p75": 67371159, "mean": 66875922, "cv_percent": 0.91}}
   ],
-  "perft_nps_median_of_positions": 63024149,
-  "legal_movegen_ns_per_position": {"n": 7, "median": 439.3, "min": 433.4, "p25": 437.2, "p75": 440.2, "mean": 438.4, "cv_percent": 0.58},
-  "copy_make_ns_per_move": {"n": 7, "median": 13.82, "min": 13.59, "p25": 13.74, "p75": 13.87, "mean": 13.80, "cv_percent": 0.86},
+  "perft_nps_median_of_positions": 62703039,
+  "legal_movegen_ns_per_position": {"n": 7, "median": 436.7, "min": 431.5, "p25": 436.1, "p75": 438.2, "mean": 436.9, "cv_percent": 0.64},
+  "copy_make_ns_per_move": {"n": 7, "median": 13.63, "min": 13.48, "p25": 13.55, "p75": 13.72, "mean": 13.65, "cv_percent": 0.91},
   "slider_ns_per_lookup": {
-    "rook_rays": {"n": 7, "median": 29.22, "min": 28.69, "p25": 29.02, "p75": 29.40, "mean": 29.44, "cv_percent": 2.74},
-    "rook_dispatch": {"n": 7, "median": 0.87, "min": 0.84, "p25": 0.86, "p75": 0.88, "mean": 0.88, "cv_percent": 3.14},
-    "bishop_rays": {"n": 7, "median": 22.82, "min": 22.31, "p25": 22.55, "p75": 23.24, "mean": 23.15, "cv_percent": 4.14},
-    "bishop_dispatch": {"n": 7, "median": 0.66, "min": 0.62, "p25": 0.64, "p75": 0.69, "mean": 0.67, "cv_percent": 4.95}
+    "rook_rays": {"n": 7, "median": 26.81, "min": 25.84, "p25": 26.04, "p75": 27.01, "mean": 26.74, "cv_percent": 3.11},
+    "rook_dispatch": {"n": 7, "median": 0.90, "min": 0.87, "p25": 0.87, "p75": 0.96, "mean": 0.92, "cv_percent": 4.94},
+    "bishop_rays": {"n": 7, "median": 21.94, "min": 21.43, "p25": 21.58, "p75": 22.17, "mean": 22.22, "cv_percent": 4.64},
+    "bishop_dispatch": {"n": 7, "median": 0.67, "min": 0.63, "p25": 0.65, "p75": 0.70, "mean": 0.67, "cv_percent": 4.02}
   }
 }

@@ -68,9 +68,13 @@ The engine uses these techniques to search fewer positions:
 - **Null move pruning.** The engine skips its own move. If the position is still good enough, it
   stops searching that position.
 - **Late move reductions.** Quiet moves that come late in the order are searched to a smaller
-  depth.
+  depth, by a logarithmic table of the depth and of the number of moves tried.
 - **Reverse futility and futility pruning.** Near the leaves, the engine stops a position whose
   static score is far above beta, and it skips quiet moves that cannot reach alpha.
+- **Probcut.** If a good capture still beats beta by a margin after a shallower search, the
+  engine stops searching that position.
+- **Correction history.** The engine learns the error that the search finds in the static score of
+  a pawn structure, and adds it to the next static score of that structure.
 - **Aspiration windows.** Each pass starts in a window around the score of the pass before it.
 - **Check extension.** The engine searches one ply deeper when the side to move is in check.
 - **Quiescence search.** At the end of the search, the engine continues with captures. This
@@ -87,15 +91,19 @@ recent cutoffs count more than old ones.
 ### Evaluation
 
 The engine evaluates a position with a neural network. The network takes the 768 combinations of
-a piece and a square, and gives 128 values for each side. It is trained on 15.8 million positions
-from games of the engine against itself, in three rounds, each round played with the network of
-the round before. The values of a position follow the search: a move changes a few rows of the
-weights, so that an evaluation costs one pass over 256 integers. The network is compiled into the
-library, and the option `EvalFile` loads another one.
+a piece and a square, once for each half of the board that holds the king of the side that looks
+(the king is mirrored to the files a to d first), and gives 128 values for each side. One of eight
+output layers, chosen by the number of pieces on the board, turns them into a score. The values of
+a position follow the search: a move changes a few rows of the weights, and a king that changes
+half or mirror makes its side compute its values again. An evaluation costs one pass over 256
+integers. The network is compiled into the library, and the option `EvalFile` loads another one.
 
-The evaluation that came before it is a hand written one, and the preset `tuned` keeps it. It
-scores a position from material and from the placement of the pieces. Each piece has
-a value, and a piece-square table adds a bonus or a penalty for the square the piece stands on.
+The network is trained on 38.7 million positions: 16.9 million from games of Leela Chess Zero and
+21.8 million from games of the engine against itself.
+
+The preset `tuned` uses a hand written evaluation instead. It scores a position from material and
+from the placement of the pieces. Each piece has a value, and a piece-square table adds a bonus or
+a penalty for the square the piece stands on.
 Four more terms refine the score: the bishop pair, a rook on an open or half-open file, the
 number of squares that a knight, bishop, rook or queen can reach, and the right to move.
 
@@ -151,7 +159,7 @@ The table shows the mean time per move at depth 3, 5 and 6. Step 00 is the origi
 | 07 | Null move, late move reductions, killers, history, check extension | 0.51ms | 2.5ms | 5.8ms |
 | 08 | Exchange evaluation, futility, aspiration windows, counter moves | 0.25ms | 0.71ms | 1.4ms |
 | 09 | Tuned evaluation, tuned margins, history gravity | 0.25ms | 0.96ms | 1.8ms |
-| 10 | Network evaluation, history malus, margins tuned for them | 0.13ms | 0.38ms | 0.97ms |
+| 10 | Network, history malus, correction history, probcut, margins | 0.18ms | 0.44ms | 0.93ms |
 
 Three results stand out:
 
@@ -166,20 +174,20 @@ Three results stand out:
 - The tuned evaluation of step 09 is slower per position (133ns for one evaluation against 62ns),
   and it plays much better. It scores 65% of the points against step 08 at 50ms per move (236
   wins, 49 draws, 115 losses in 400 games). Depth 10 takes 19ms.
-- The network of step 10 scores 82% of the points against step 09 at 50ms per move (63 wins, 6
-  draws, 11 losses in 80 games). It searches faster per position and visits fewer positions, so
-  depth 10 takes 1.46 times less time in an interleaved run. Step 10 was measured in a later
+- The network of step 10 scores 90% of the points against step 09 at 50ms per move (55 wins, 2
+  draws, 5 losses in 62 games). It searches faster per position and visits fewer positions, so
+  depth 10 takes 1.39 times less time in an interleaved run. Step 10 was measured in a later
   session than the rows above it, so the rows are not a comparison, and the interleaved run is.
 
 ### Summary
 
 | Measure | Result |
 |---|---|
-| Depth 10 from an opening position | 18ms on one core |
-| Search speed | 4.0 million nodes per second |
+| Depth 10 from an opening position | 20ms on one core |
+| Search speed | 4.2 million nodes per second |
 | Move generation (perft) | 44 million nodes per second |
-| Against step 09 (the engine before the network), 50ms per move | 63 wins, 6 draws, 11 losses in 80 games (82% of the points) |
-| Rating against Stockfish 19, 1s per move | about 2850 Elo (interval 2793 to 2902, 250 games) |
+| Against step 09 (the engine before the network), 50ms per move | 55 wins, 2 draws, 5 losses in 62 games (90% of the points) |
+| Rating against Stockfish 19, 1s per move | about 2930 Elo (interval 2876 to 2986, 250 games) |
 
 The rating uses Stockfish's `UCI_Elo` scale. Stockfish calibrates this scale for longer time
 controls. The number therefore is not a rating-list rating. It applies at this speed and on this
@@ -187,17 +195,17 @@ machine.
 
 ### Comparison with Stockfish
 
-Per node, the engine is faster than Stockfish. It searches 4.0 million nodes per second.
+Per node, the engine is faster than Stockfish. It searches 4.2 million nodes per second.
 Stockfish searches 0.6 to 1.6 million nodes per second. Both numbers are measured on one core.
 
-Stockfish needs far fewer nodes to reach a given depth, 17 times fewer at depth 10. Its search is
+Stockfish needs far fewer nodes to reach a given depth, 20 times fewer at depth 10. Its search is
 more selective, and its network is larger.
 
 | Depth | Stockfish 19 | This engine | Stockfish nodes | Engine nodes |
 |---:|---:|---:|---:|---:|
-| 5 | 0.8ms | 0.38ms | 469 | 1,610 |
-| 7 | 1.1ms | 1.9ms | 893 | 7,290 |
-| 10 | 2.5ms | 10ms | 2,300 | 38,146 |
+| 5 | 0.8ms | 0.44ms | 469 | 1,792 |
+| 7 | 1.1ms | 1.8ms | 893 | 7,602 |
+| 10 | 2.5ms | 11ms | 2,300 | 45,163 |
 
 ## Getting started
 
@@ -273,34 +281,39 @@ The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 ## Roadmap
 
 Quiescence search makes up 57% to 72% of all nodes at depths 5 to 10, and the first move tried
-causes the cutoff 94% of the time. The results of the 25 ideas that were tested are in
+causes the cutoff 94% of the time. The results of the ideas that were tested are in
 [results](results/README.md). These remain open.
 
 ### Close to a gain
 
-- **Razoring.** It scored 0.520 over 2,088 games on the network, and was not kept, because it
-  missed 17 of the mate puzzles.
-- **Retuning the network.** The third round of training added 82 Elo, so a fourth round, played
-  by the engine with that network, may add more.
 - **Lazy SMP.** Two threads score 59% of the points against one thread. The `Threads` option of
-  the UCI program turns it on, and a match with the network at several thread counts is open.
+  the UCI program turns it on, and a match with the network at several thread counts, up to the
+  64 threads of a server, is open.
+- **Vector instructions on ARM.** The AVX2 versions of the network functions are chosen when the
+  program starts. A version for the dot-product instructions of an ARM processor is open, and so
+  are its measurements on the board that runs the bot.
+- **Threat inputs.** Inputs for the pieces that the other side attacks lowered the held-out error
+  from 0.01737 to 0.01678, and they cost 18% to 26% of the speed because they are computed for
+  every position. Updating them with the move, and not for every position, could make them pay.
+- **The puzzle that the network misses.** One of the 1,404 mate puzzles is a mate in 3 that the
+  search finds at depth 8. The test requires every mate in 3 to be found by depth 6, so it fails.
 
 ### Infrastructure
 
 - A table of 64MB against 16MB and two-way buckets show no difference at 200ms per move. They
   need a longer time control to be measured.
-- SPSA tuning with more games. The 120 iterations of 48 games moved the margins of step 10 and
-  gained 18 Elo, so a longer run may give more.
+- SPSA tuning with more games, now on the margins of the three techniques of step 10. The 120
+  iterations of 48 games moved the margins and gained 18 Elo, so a longer run may give more.
 - A build with PEXT lookups, which is 5% to 12% faster, for hosts known to have BMI2.
 - A measurement of the tablebases. A match from random openings reaches few positions with five
   pieces, so it needs starting positions from endgames.
+- More Leela positions. Twice the positions of the same 60 tars scored the same (+66 Elo against
+  +55), so more tars may not help, and 164 more are listed.
 
 ### Evaluation
 
-- A larger network, or two layers. A network with 256 values for each side overfit 9.7 million
-  positions, and may not with more data.
-- Passed pawn and pawn structure terms. They did not pass a match with the numbers that the
-  tuning found, and need better starting values or more data.
+- Passed pawn and pawn structure terms for the hand written evaluation. They did not pass a match
+  with the numbers that the tuning found, and need better starting values or more data.
 - A learned move policy. A model of 196 features trained on self-play ordered moves worse than
   history, so it needs better features before another test.
 
@@ -333,6 +346,11 @@ version 3 of the License or, at your option, any later version. See [LICENSE](LI
 
 The Syzygy probing code in [third_party/fathom](third_party/fathom) is distributed under its own
 MIT license, which is in that directory.
+
+The network is trained on positions from the training games of
+[Leela Chess Zero](https://lczero.org/dev/wiki/training-data/), which are made available under the
+[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/), and on games of the
+engine against itself.
 
 [blog-link]:          https://syedtaha22.github.io/blog/chess-bitboards-and-benchmarks/
 [build-link]:         https://github.com/syedtaha22/meridian/actions/workflows/ci.yml

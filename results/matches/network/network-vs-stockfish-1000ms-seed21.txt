@@ -25,11 +25,11 @@
 250 of 250 games
 network (1000ms per move) against UCI engine (1000ms per move)
 opponent   games   wins  draws losses    score  illegal   rating from this level
-2400          50     42      2      6   0.860    0/0           2715 (2608 to 2919)
-2600          50     41      4      5   0.860    0/0           2915 (2812 to 3104)
-2800          50     20     13     17   0.530    0/0           2821 (2738 to 2907)
-3000          50     10     12     28   0.320    0/0           2869 (2770 to 2951)
-3190          50      4      7     39   0.150    0/0           2889 (2729 to 2984)
+2400          50     47      1      2   0.950    0/0           2912 (2768 to 3720)
+2600          50     45      1      4   0.910    0/0           3002 (2879 to 3350)
+2800          50     31      9     10   0.710    0/0           2956 (2870 to 3065)
+3000          50      9     16     25   0.340    0/0           2885 (2795 to 2962)
+3190          50      5      8     37   0.180    0/0           2927 (2786 to 3018)
 illegal moves are counted as candidate/opponent, per level
 
-Estimated rating: 2848 (95% interval 2793 to 2902) over 250 games
+Estimated rating: 2931 (95% interval 2876 to 2986) over 250 games

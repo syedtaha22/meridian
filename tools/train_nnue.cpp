@@ -22,11 +22,14 @@
 //                   [--lr 0.001] [--lambda 0.7] [--max-score 2500] [--threads 24] [--limit 0]
 //                   [--seed 1] [--init FILE] [--inc FILE]
 //
-// The data file has lines `FEN<TAB>result<TAB>game<TAB>score`, as `gen_positions` writes them.
+// The data file has lines `FEN<TAB>result<TAB>game<TAB>score`, as `gen_positions` and
+// `scripts/convert_lc0.py` write them. A position in check is left out.
+//
 // The target of a position is `lambda` times the expected points of the search score plus
 // `1 - lambda` times the result of the game, from the side to move. The network (see
 // `nnue.hpp`) is trained in floating point with Adam to minimise the squared error of the
-// expected points it predicts, with the scale of the evaluation tuning. A fifth of the games are
+// expected points it predicts, with the scale of the evaluation tuning. A position uses the king
+// bucket of its inputs and the output layer of its number of pieces. A fifth of the games are
 // held out. The weights of the epoch with the lowest held-out error are quantized and written, and
 // the quantized network is compared with the floating point one on held-out positions.
 
@@ -56,10 +59,32 @@ namespace {
 
     struct Sample {
         uint8_t count = 0;
-        uint8_t side = 0;  // 0 White to move, 1 Black
-        float target = 0;  // expected points for the side to move
+        uint8_t side = 0;         // 0 White to move, 1 Black
+        float target = 0;         // expected points for the side to move
+        uint8_t kb[2] = {0, 0};   // king bucket of each point of view
+        uint8_t mir[2] = {0, 0};  // mirror of each point of view
         uint16_t pieces[kMaxPieces];
     };
+
+    // Fills the side, the pieces and the king contexts of a sample from a position.
+    void fill_sample(const Position &pos, Sample &sample) {
+        sample.side = pos.side_to_move() == kWhite ? 0 : 1;
+
+        for (int sq = 0; sq < kSquares && sample.count < kMaxPieces; ++sq) {
+            const Piece piece = pos.piece_on(static_cast<Square>(sq));
+
+            if (piece != kNoPiece) {
+                sample.pieces[sample.count++] = static_cast<uint16_t>(piece * 64 + sq);
+            }
+        }
+
+        for (int p = 0; p < 2; ++p) {
+            int kb = 0, mir = 0;
+            king_context(p, pos.king_square(p == 0 ? kWhite : kBlack), kb, mir);
+            sample.kb[p] = static_cast<uint8_t>(kb);
+            sample.mir[p] = static_cast<uint8_t>(mir);
+        }
+    }
 
     double sigmoid(double x) {
         return 1.0 / (1.0 + std::exp(-x));
@@ -105,20 +130,13 @@ namespace {
 
             const auto pos = Position::from_fen(fen);
 
-            if (!pos) {
+            // A position in check has no quiet score, and the search does not evaluate it.
+            if (!pos || pos->in_check()) {
                 continue;
             }
 
             Sample sample;
-            sample.side = pos->side_to_move() == kWhite ? 0 : 1;
-
-            for (int sq = 0; sq < kSquares && sample.count < kMaxPieces; ++sq) {
-                const Piece piece = pos->piece_on(static_cast<Square>(sq));
-
-                if (piece != kNoPiece) {
-                    sample.pieces[sample.count++] = static_cast<uint16_t>(piece * 64 + sq);
-                }
-            }
+            fill_sample(*pos, sample);
 
             const double white_result = std::stod(result);
             const double side_cp = sample.side == 0 ? cp : -cp;
@@ -150,22 +168,22 @@ namespace {
     struct Model {
         std::vector<float> w = std::vector<float>(kInputs * kHidden);
         std::vector<float> b = std::vector<float>(kHidden);
-        std::vector<float> wo = std::vector<float>(2 * kHidden);
-        float bo = 0;
+        std::vector<float> wo = std::vector<float>(kBuckets * 2 * kHidden);
+        std::vector<float> bo = std::vector<float>(kBuckets);
     };
 
     struct Gradient {
         std::vector<float> w = std::vector<float>(kInputs * kHidden);
         std::vector<float> b = std::vector<float>(kHidden);
-        std::vector<float> wo = std::vector<float>(2 * kHidden);
-        float bo = 0;
+        std::vector<float> wo = std::vector<float>(kBuckets * 2 * kHidden);
+        std::vector<float> bo = std::vector<float>(kBuckets);
         double loss = 0;
 
         void clear() {
             std::fill(w.begin(), w.end(), 0.0f);
             std::fill(b.begin(), b.end(), 0.0f);
             std::fill(wo.begin(), wo.end(), 0.0f);
-            bo = 0;
+            std::fill(bo.begin(), bo.end(), 0.0f);
             loss = 0;
         }
     };
@@ -184,8 +202,12 @@ namespace {
         for (int i = 0; i < s.count; ++i) {
             const int piece = s.pieces[i] / 64;
             const int square = s.pieces[i] % 64;
-            const float *wr = &m.w[static_cast<size_t>(feature_index(0, piece, square)) * kHidden];
-            const float *br = &m.w[static_cast<size_t>(feature_index(1, piece, square)) * kHidden];
+            const float *wr =
+                &m.w[static_cast<size_t>(king_feature(0, piece, square, s.kb[0], s.mir[0])) *
+                     kHidden];
+            const float *br =
+                &m.w[static_cast<size_t>(king_feature(1, piece, square, s.kb[1], s.mir[1])) *
+                     kHidden];
 
             for (int h = 0; h < kHidden; ++h) {
                 white[h] += wr[h];
@@ -195,13 +217,15 @@ namespace {
 
         const float *us = s.side == 0 ? white : black;
         const float *them = s.side == 0 ? black : white;
-        float out = m.bo;
+        const int bucket = bucket_of(s.count);
+        const float *wo = &m.wo[static_cast<size_t>(bucket) * 2 * kHidden];
+        float out = m.bo[bucket];
 
         for (int h = 0; h < kHidden; ++h) {
             acc[0][h] = us[h];
             acc[1][h] = them[h];
-            out += std::clamp(us[h], 0.0f, 1.0f) * m.wo[h] +
-                   std::clamp(them[h], 0.0f, 1.0f) * m.wo[kHidden + h];
+            out += std::clamp(us[h], 0.0f, 1.0f) * wo[h] +
+                   std::clamp(them[h], 0.0f, 1.0f) * wo[kHidden + h];
         }
         return out;
     }
@@ -217,7 +241,10 @@ namespace {
 
         if (g != nullptr) {
             const double d_out = 2.0 * error * prediction * (1.0 - prediction) * kToLogit * scale;
-            g->bo += static_cast<float>(d_out);
+            const int bucket = bucket_of(s.count);
+            const float *wo = &m.wo[static_cast<size_t>(bucket) * 2 * kHidden];
+            float *gwo = &g->wo[static_cast<size_t>(bucket) * 2 * kHidden];
+            g->bo[bucket] += static_cast<float>(d_out);
 
             float d_us[kHidden];
             float d_them[kHidden];
@@ -225,13 +252,12 @@ namespace {
             for (int h = 0; h < kHidden; ++h) {
                 const float a = std::clamp(acc[0][h], 0.0f, 1.0f);
                 const float c = std::clamp(acc[1][h], 0.0f, 1.0f);
-                g->wo[h] += static_cast<float>(d_out) * a;
-                g->wo[kHidden + h] += static_cast<float>(d_out) * c;
-                d_us[h] = (acc[0][h] > 0.0f && acc[0][h] < 1.0f)
-                              ? static_cast<float>(d_out) * m.wo[h]
-                              : 0.0f;
+                gwo[h] += static_cast<float>(d_out) * a;
+                gwo[kHidden + h] += static_cast<float>(d_out) * c;
+                d_us[h] = (acc[0][h] > 0.0f && acc[0][h] < 1.0f) ? static_cast<float>(d_out) * wo[h]
+                                                                 : 0.0f;
                 d_them[h] = (acc[1][h] > 0.0f && acc[1][h] < 1.0f)
-                                ? static_cast<float>(d_out) * m.wo[kHidden + h]
+                                ? static_cast<float>(d_out) * wo[kHidden + h]
                                 : 0.0f;
                 g->b[h] += d_us[h] + d_them[h];
             }
@@ -242,8 +268,12 @@ namespace {
             for (int i = 0; i < s.count; ++i) {
                 const int piece = s.pieces[i] / 64;
                 const int square = s.pieces[i] % 64;
-                float *wr = &g->w[static_cast<size_t>(feature_index(0, piece, square)) * kHidden];
-                float *br = &g->w[static_cast<size_t>(feature_index(1, piece, square)) * kHidden];
+                float *wr =
+                    &g->w[static_cast<size_t>(king_feature(0, piece, square, s.kb[0], s.mir[0])) *
+                          kHidden];
+                float *br =
+                    &g->w[static_cast<size_t>(king_feature(1, piece, square, s.kb[1], s.mir[1])) *
+                          kHidden];
 
                 for (int h = 0; h < kHidden; ++h) {
                     wr[h] += d_white[h];
@@ -320,11 +350,19 @@ namespace {
 
         for (int h = 0; h < kHidden; ++h) {
             net.feature_bias[h] = quantize(m.b[h], kQuantInput);
-            net.output_weights[0][h] = quantize(m.wo[h], kQuantOutput);
-            net.output_weights[1][h] = quantize(m.wo[kHidden + h], kQuantOutput);
         }
 
-        net.output_bias = static_cast<int32_t>(std::lround(m.bo * kQuantInput * kQuantOutput));
+        for (int bucket = 0; bucket < kBuckets; ++bucket) {
+            const size_t base = static_cast<size_t>(bucket) * 2 * kHidden;
+
+            for (int h = 0; h < kHidden; ++h) {
+                net.output_weights[bucket][0][h] = quantize(m.wo[base + h], kQuantOutput);
+                net.output_weights[bucket][1][h] = quantize(m.wo[base + kHidden + h], kQuantOutput);
+            }
+
+            net.output_bias[bucket] =
+                static_cast<int32_t>(std::lround(m.bo[bucket] * kQuantInput * kQuantOutput));
+        }
         return net;
     }
 
@@ -373,10 +411,21 @@ int main(int argc, char **argv) {
 
         for (int h = 0; h < kHidden; ++h) {
             model.b[h] = static_cast<float>(start->feature_bias[h]) / kQuantInput;
-            model.wo[h] = static_cast<float>(start->output_weights[0][h]) / kQuantOutput;
-            model.wo[kHidden + h] = static_cast<float>(start->output_weights[1][h]) / kQuantOutput;
         }
-        model.bo = static_cast<float>(start->output_bias) / (kQuantInput * kQuantOutput);
+
+        for (int bucket = 0; bucket < kBuckets; ++bucket) {
+            const size_t base = static_cast<size_t>(bucket) * 2 * kHidden;
+
+            for (int h = 0; h < kHidden; ++h) {
+                model.wo[base + h] =
+                    static_cast<float>(start->output_weights[bucket][0][h]) / kQuantOutput;
+                model.wo[base + kHidden + h] =
+                    static_cast<float>(start->output_weights[bucket][1][h]) / kQuantOutput;
+            }
+
+            model.bo[bucket] =
+                static_cast<float>(start->output_bias[bucket]) / (kQuantInput * kQuantOutput);
+        }
     } else {
         // Weights of a few features add up to about one, so that the units start in the range
         // where they are not clipped.
@@ -391,8 +440,7 @@ int main(int argc, char **argv) {
     Adam adam_w(model.w.size());
     Adam adam_b(model.b.size());
     Adam adam_wo(model.wo.size());
-    Adam adam_bo(1);
-    std::vector<float> bo_param(1, model.bo);
+    Adam adam_bo(model.bo.size());
 
     std::vector<size_t> order(data.train.size());
 
@@ -444,7 +492,9 @@ int main(int argc, char **argv) {
                 for (size_t i = 0; i < total.wo.size(); ++i) {
                     total.wo[i] += g.wo[i];
                 }
-                total.bo += g.bo;
+                for (size_t i = 0; i < total.bo.size(); ++i) {
+                    total.bo[i] += g.bo[i];
+                }
                 total.loss += g.loss;
             }
 
@@ -452,10 +502,7 @@ int main(int argc, char **argv) {
             adam_w.update(model.w, total.w, lr, step_number);
             adam_b.update(model.b, total.b, lr, step_number);
             adam_wo.update(model.wo, total.wo, lr, step_number);
-            std::vector<float> bo_grad(1, total.bo);
-            bo_param[0] = model.bo;
-            adam_bo.update(bo_param, bo_grad, lr, step_number);
-            model.bo = bo_param[0];
+            adam_bo.update(model.bo, total.bo, lr, step_number);
 
             train_loss += total.loss;
             seen += batch;
@@ -493,15 +540,7 @@ int main(int argc, char **argv) {
             const int cp = evaluate(*net, acc, pos->side_to_move());
 
             Sample sample;
-            sample.side = pos->side_to_move() == kWhite ? 0 : 1;
-
-            for (int sq = 0; sq < kSquares && sample.count < kMaxPieces; ++sq) {
-                const Piece piece = pos->piece_on(static_cast<Square>(sq));
-
-                if (piece != kNoPiece) {
-                    sample.pieces[sample.count++] = static_cast<uint16_t>(piece * 64 + sq);
-                }
-            }
+            fill_sample(*pos, sample);
 
             float scratch[2][kHidden];
             const double reference = forward(model, sample, scratch) * kOutputScale;
@@ -522,7 +561,7 @@ int main(int argc, char **argv) {
     if (args.has("inc") && net) {
         std::ofstream inc(args.get("inc", ""));
         inc << "// A network written by tools/train_nnue --inc: " << kInputs << " inputs, "
-            << kHidden << " values for each side.\n\n";
+            << kHidden << " values for each side,\n// " << kBuckets << " output layers.\n\n";
 
         auto numbers = [&inc](const char *name, const std::vector<int> &values) {
             inc << "constexpr int16_t " << name << "[] = {\n";
@@ -546,16 +585,24 @@ int main(int argc, char **argv) {
         std::vector<int> bias(net->feature_bias, net->feature_bias + kHidden);
         std::vector<int> output;
 
-        for (int side = 0; side < 2; ++side) {
-            for (int h = 0; h < kHidden; ++h) {
-                output.push_back(net->output_weights[side][h]);
+        for (int bucket = 0; bucket < kBuckets; ++bucket) {
+            for (int side = 0; side < 2; ++side) {
+                for (int h = 0; h < kHidden; ++h) {
+                    output.push_back(net->output_weights[bucket][side][h]);
+                }
             }
         }
 
         numbers("kBuiltinFeatureWeights", weights);
         numbers("kBuiltinFeatureBias", bias);
         numbers("kBuiltinOutputWeights", output);
-        inc << "constexpr int32_t kBuiltinOutputBias = " << net->output_bias << ";\n";
+        inc << "constexpr int32_t kBuiltinOutputBias[] = {";
+
+        for (int bucket = 0; bucket < kBuckets; ++bucket) {
+            inc << (bucket == 0 ? "" : ", ") << net->output_bias[bucket];
+        }
+
+        inc << "};\n";
         std::printf("source written to %s\n", args.get("inc", "").c_str());
     }
     return 0;

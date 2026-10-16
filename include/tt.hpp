@@ -94,6 +94,14 @@ namespace chess {
         }
 
         /**
+         * Asks the processor to load the bucket of a position, so that a later probe finds it in
+         * the cache.
+         */
+        void prefetch(uint64_t key) const noexcept {
+            __builtin_prefetch(&slots_[key & mask_ & (two_way_ ? ~size_t{1} : ~size_t{0})]);
+        }
+
+        /**
          * @brief Looks up a position.
          *
          * @param key Position hash.

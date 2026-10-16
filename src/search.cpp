@@ -181,6 +181,8 @@ namespace chess {
             {"continuation2", &SearchOptions::continuation2, nullptr},
             {"counter_first", &SearchOptions::counter_first, nullptr},
             {"underpromotions_late", &SearchOptions::underpromotions_late, nullptr},
+            {"correction_history", &SearchOptions::correction_history, nullptr},
+            {"probcut", &SearchOptions::probcut, nullptr},
             {"rfp_margin", nullptr, &SearchOptions::rfp_margin},
             {"futility_base", nullptr, &SearchOptions::futility_base},
             {"futility_step", nullptr, &SearchOptions::futility_step},
@@ -193,6 +195,8 @@ namespace chess {
             {"null_margin_step", nullptr, &SearchOptions::null_margin_step},
             {"aspiration_delta", nullptr, &SearchOptions::aspiration_delta},
             {"singular_depth", nullptr, &SearchOptions::singular_depth},
+            {"probcut_margin", nullptr, &SearchOptions::probcut_margin},
+            {"correction_limit", nullptr, &SearchOptions::correction_limit},
             {"threads", nullptr, &SearchOptions::threads},
             {"policy_scale", nullptr, &SearchOptions::policy_scale},
             {"killer_count", nullptr, &SearchOptions::killer_count},
@@ -268,6 +272,9 @@ namespace chess {
         o.null_margin = false;
         o.aspiration = false;
         o.counter_history = false;
+        o.lmr_table = false;
+        o.correction_history = false;
+        o.probcut = false;
 
         // The changes after the name are applied last, on whatever the name gave.
         const size_t plus = name.find('+');
@@ -361,6 +368,9 @@ namespace chess {
             o.history_bonus = current.history_bonus;
             o.history_malus = current.history_malus;
             o.malus_percent = current.malus_percent;
+            o.lmr_table = current.lmr_table;
+            o.correction_history = current.correction_history;
+            o.probcut = current.probcut;
         }
 
         return finish();
@@ -401,6 +411,7 @@ namespace chess {
         std::memset(history_, 0, sizeof(history_));
         std::memset(piece_history_, 0, sizeof(piece_history_));
         std::memset(capture_history_, 0, sizeof(capture_history_));
+        std::memset(correction_, 0, sizeof(correction_));
 
         for (Move &move : counter_move_) {
             move = Move();
@@ -803,6 +814,8 @@ namespace chess {
                 continue;
             }
 
+            tt_->prefetch(next.key());
+
             if (nnue_ != nullptr) {
                 nnue::update(*nnue_, pos, move, acc_[0], acc_[1]);
             }
@@ -1025,12 +1038,64 @@ namespace chess {
             }
         }
 
+        // Probcut: a good capture that still beats beta by a margin in a shallower search
+        // proves that the node fails high.
+        if (options_.probcut && quiet_node && depth >= 5 && std::abs(beta) < kMateBound - 1000 &&
+            !(tt_depth >= depth - 3 && tt_score < beta + options_.probcut_margin &&
+              tt_bound != kBoundNone)) {
+            const int cut_beta = beta + options_.probcut_margin;
+            MoveList captures;
+            generate_captures(pos, captures);
+            int tried = 0;
+
+            for (int c = 0; c < captures.size() && tried < 4; ++c) {
+                const Move capture = captures[c];
+
+                if (see(pos, capture) < cut_beta - eval()) {
+                    continue;
+                }
+
+                Position next = pos;
+
+                if (!next.make_move(capture)) {
+                    continue;
+                }
+
+                ++tried;
+                tt_->prefetch(next.key());
+
+                if (nnue_ != nullptr) {
+                    nnue::update(*nnue_, pos, capture, acc_[static_cast<size_t>(ply)],
+                                 acc_[static_cast<size_t>(ply) + 1]);
+                }
+
+                keys_.push_back(next.key());
+                int value = -quiescence(next, -cut_beta, -cut_beta + 1, ply + 1);
+
+                if (value >= cut_beta && !aborted_) {
+                    value = -negamax(next, depth - 4, -cut_beta, -cut_beta + 1, ply + 1, false,
+                                     true, capture);
+                }
+
+                keys_.pop_back();
+
+                if (aborted_) {
+                    return 0;
+                }
+                if (value >= cut_beta) {
+                    tt_->store(pos.key(), capture, to_tt_score(value, ply), depth - 3, kBoundLower);
+                    return value - (cut_beta - beta);
+                }
+            }
+        }
+
         // Null move: if passing the turn still scores at least beta, the position is good
         // enough for the side to move that a real move would too.
         if (options_.null_move && allow_null && !pv && !in_check && depth >= 3 &&
             excluded.is_null() && pos.has_non_pawn_material() && eval() >= beta) {
             Position next = pos;
             next.make_null_move();
+            tt_->prefetch(next.key());
 
             if (nnue_ != nullptr) {
                 acc_[static_cast<size_t>(ply) + 1] = acc_[static_cast<size_t>(ply)];
@@ -1202,11 +1267,7 @@ namespace chess {
                 continue;
             }
 
-            if (nnue_ != nullptr) {
-                nnue::update(*nnue_, pos, move, acc_[static_cast<size_t>(ply)],
-                             acc_[static_cast<size_t>(ply) + 1]);
-            }
-
+            tt_->prefetch(next.key());
             ++legal_moves;
 
             const bool quiet = !move.is_capture() && !move.is_promotion();
@@ -1228,6 +1289,12 @@ namespace chess {
                         continue;
                     }
                 }
+            }
+
+            // The accumulator of a move that is pruned above is never needed.
+            if (nnue_ != nullptr) {
+                nnue::update(*nnue_, pos, move, acc_[static_cast<size_t>(ply)],
+                             acc_[static_cast<size_t>(ply) + 1]);
             }
 
             keys_.push_back(next.key());
@@ -1414,6 +1481,19 @@ namespace chess {
             const Bound bound = best >= beta            ? kBoundLower
                                 : best > original_alpha ? kBoundExact
                                                         : kBoundUpper;
+
+            // The static score learns the error that this search found for the pawn structure.
+            if (options_.correction_history && !in_check && std::abs(best) < kMateBound &&
+                (best_move.is_null() || !best_move.is_capture()) &&
+                !(bound == kBoundLower && best <= eval()) &&
+                !(bound == kBoundUpper && best >= eval())) {
+                int16_t &c = correction_[pos.side_to_move()][correction_index(pos)];
+                const int limit = options_.correction_limit;
+                const int bonus = std::clamp((best - eval()) * depth * 32, -limit / 4, limit / 4);
+                c = static_cast<int16_t>(
+                    std::clamp(c + bonus - c * std::abs(bonus) / limit, -limit, limit));
+            }
+
             tt_->store(pos.key(), best_move, to_tt_score(best, ply), depth, bound);
         }
 

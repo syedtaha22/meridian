@@ -16,8 +16,9 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Network tests: the accumulator that follows a game equals the one computed from the board,
-// the evaluation is the same from both sides, and a saved network loads back.
+// Network tests: the accumulator that follows a game equals the one computed from the board, also
+// when a king changes its bucket or the mirror, the evaluation is the same from both sides, the
+// output layer follows the number of pieces, and a saved network loads back.
 #include <cstdio>
 #include <cstdlib>
 #include <random>
@@ -53,18 +54,31 @@ namespace {
             b = static_cast<int16_t>(small(random));
         }
 
-        for (auto &row : net.output_weights) {
-            for (int16_t &w : row) {
-                w = static_cast<int16_t>(small(random));
+        for (auto &layer : net.output_weights) {
+            for (auto &row : layer) {
+                for (int16_t &w : row) {
+                    w = static_cast<int16_t>(small(random));
+                }
             }
         }
 
-        net.output_bias = small(random) * 100;
+        for (int32_t &b : net.output_bias) {
+            b = small(random) * 100;
+        }
+
         return net;
     }
 
     bool same(const chess::nnue::Accumulator &a, const chess::nnue::Accumulator &b) {
+        if (a.count != b.count) {
+            return false;
+        }
+
         for (int side = 0; side < 2; ++side) {
+            if (a.kb[side] != b.kb[side] || a.mir[side] != b.mir[side]) {
+                return false;
+            }
+
             for (int i = 0; i < chess::nnue::kHidden; ++i) {
                 if (a.values[side][i] != b.values[side][i]) {
                     return false;
@@ -171,6 +185,80 @@ namespace {
         }
     }
 
+    /**
+     * The king bucket, the mirror and the output layer from the numbers that define them.
+     */
+    void test_contexts() {
+        int kb = -1;
+        int mir = -1;
+        chess::nnue::king_context(0, chess::make_square(4, 0), kb, mir);
+        check(kb == 0 && mir == 1, "a white king on e1 is on the low half, mirrored");
+        chess::nnue::king_context(0, chess::make_square(0, 7), kb, mir);
+        check(kb == 1 && mir == 0, "a white king on a8 is on the high half, not mirrored");
+        chess::nnue::king_context(1, chess::make_square(4, 7), kb, mir);
+        check(kb == 0 && mir == 1, "a black king on e8 sees the board flipped, like e1");
+        chess::nnue::king_context(0, chess::make_square(3, 3), kb, mir);
+        check(kb == 0 && mir == 0, "a white king on d4 is on the low half, not mirrored");
+        chess::nnue::king_context(0, chess::make_square(4, 4), kb, mir);
+        check(kb == 1 && mir == 1, "a white king on e5 is on the high half, mirrored");
+
+        check(chess::nnue::bucket_of(2) == 0 && chess::nnue::bucket_of(5) == 0 &&
+                  chess::nnue::bucket_of(6) == 1 && chess::nnue::bucket_of(9) == 1 &&
+                  chess::nnue::bucket_of(32) == chess::nnue::kBuckets - 1,
+              "the output layer follows the number of pieces");
+    }
+
+    /**
+     * Games of two kings and a few pieces, where the kings cross the middle of the board and the
+     * accumulator has to be computed again for the point of view of a king that changes bucket.
+     */
+    void test_king_moves() {
+        const chess::nnue::Network net = random_network(21);
+        std::mt19937_64 random(5);
+        int changes = 0;
+        int checked = 0;
+
+        for (int game = 0; game < 40; ++game) {
+            auto pos = chess::Position::from_fen("8/8/3k4/8/4K3/8/2P3p1/1N6 w - - 0 1");
+            check(pos.has_value(), "the king test position parses");
+
+            if (!pos) {
+                return;
+            }
+
+            chess::nnue::Accumulator acc;
+            chess::nnue::refresh(net, *pos, acc);
+
+            for (int ply = 0; ply < 120; ++ply) {
+                chess::MoveList legal;
+                chess::generate_legal(*pos, legal);
+
+                if (legal.empty() || pos->halfmove_clock() >= 100) {
+                    break;
+                }
+
+                const chess::Move move =
+                    legal[static_cast<int>(random() % static_cast<uint64_t>(legal.size()))];
+                chess::nnue::Accumulator next;
+                chess::nnue::update(net, *pos, move, acc, next);
+                pos->make_move(move);
+                chess::nnue::Accumulator fresh;
+                chess::nnue::refresh(net, *pos, fresh);
+                check(same(next, fresh), "the accumulator after a king move equals the refreshed");
+
+                for (int side = 0; side < 2; ++side) {
+                    changes += next.kb[side] != acc.kb[side] || next.mir[side] != acc.mir[side];
+                }
+
+                acc = next;
+                ++checked;
+            }
+        }
+
+        check(changes > 50, "the kings changed bucket or mirror often: " + std::to_string(changes));
+        check(checked > 1000, "enough king positions were checked: " + std::to_string(checked));
+    }
+
     void test_symmetry() {
         // A position and its mirror (colors exchanged, board flipped, other side to move) have
         // the same score for the side to move.
@@ -197,9 +285,10 @@ namespace {
         check(loaded != nullptr, "a network is read");
 
         if (loaded) {
-            check(loaded->output_bias == net.output_bias &&
+            check(loaded->output_bias[3] == net.output_bias[3] &&
                       loaded->feature_weights[100][5] == net.feature_weights[100][5] &&
-                      loaded->output_weights[1][77] == net.output_weights[1][77],
+                      loaded->feature_weights[1000][5] == net.feature_weights[1000][5] &&
+                      loaded->output_weights[5][1][77] == net.output_weights[5][1][77],
                   "the weights are the same after a round trip");
         }
 
@@ -240,6 +329,8 @@ namespace {
 int main() {
     test_incremental();
     test_special_moves();
+    test_contexts();
+    test_king_moves();
     test_symmetry();
     test_io();
     test_search();

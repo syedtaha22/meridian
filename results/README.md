@@ -1,9 +1,8 @@
 # Results
 
-This folder holds the recorded benchmarks and matches of the engine. The engine grew in ten
-steps. Step 00 is the original desktop engine, and each later step adds one technique, or one
-group of techniques, to the step before it. Every step runs on the position suites in
-[bench/positions](../bench/positions).
+This folder holds the recorded benchmarks and matches of the engine. Step 00 is the original
+desktop engine, and each later step adds one technique, or one group of techniques, to the step
+before it. Every step runs on the position suites in [bench/positions](../bench/positions).
 
 | Step                       | Technique added |
 |:---------------------------|:----------------|
@@ -17,6 +16,7 @@ group of techniques, to the step before it. Every step runs on the position suit
 | 07-pruning-and-reductions  | Null move, reductions, killers, history, check extension |
 | 08-search-refinements      | Exchange evaluation, futility pruning, aspiration, counter moves |
 | 09-tuned-evaluation        | Tuned evaluation, tuned margins, history gravity |
+| 10-network-evaluation      | Network evaluation, history malus, correction history, probcut |
 
 Note: this page refers to the steps by their numbers, such as step 03 for 03-move-ordering
 
@@ -163,39 +163,119 @@ the ratio to step 08 was checked in one interleaved run of `bench_search`.
 
 ### Step 10
 
-- **Step 10** replaces the hand written evaluation with a network, and adds the history malus and
-  the margins tuned with them (`network` preset). It scores 82% of the points against step 09 at
-  50ms per move (63 wins, 6 draws, 11 losses in 80 games, 95% interval 0.747 to 0.903, about
-  +269 Elo), and the test accepted H1 after 80 games. The malus and the margins add +32 Elo to
-  the network with the margins of step 09 (0.546 over 768 games, H1).
-- The network has 768 inputs, 128 values for each side and 16-bit weights. It was trained in
-  three rounds on positions from self-play, each round played by the engine with the network of
-  the round before: 4.9 million positions from step 09, 4.9 million with the first network, and
-  6.0 million with the second, 15.8 million in all (80% of the games for training, the rest held
-  out). The third round has a held-out loss of 0.01424 against 0.01942 for the hand written
-  evaluation on the same targets, and the quantized network differs from the floating point one
-  by 0.49cp. Against the network of the first two rounds it scores 0.616 over 264 games (+82
-  Elo, H1).
+- **Step 10** replaces the hand written evaluation with a network, and adds the history malus, a
+  correction of the static score by the pawn structure, probcut, a logarithmic reduction table and
+  the margins tuned with them (`network` preset). It scores 90% of the points against
+  step 09 at 50ms per move (55 wins, 2 draws, 5 losses in 62 games, 95% interval 0.833 to
+  0.973, about +388 Elo), and the test accepted H1 after 62 games.
+- The network has 2 x 768 inputs, 128 values for each side, 8 output layers and 16-bit weights.
+  The inputs are the 768 combinations of a piece and a square, once for each half of the board
+  (by rank) that holds the king of the side that looks, after the board is mirrored so that this
+  king stands on the files a to d. The output layer is chosen by the number of pieces (2 to 5, 6
+  to 9, and so on up to 30 to 32).
+- It was trained on 38.7 million positions (31.0 million for training and 7.7 million held out,
+  by game number): 16.9 million from games of Leela Chess Zero, which the ODbL licence allows
+  with credit, and 21.8 million from games of the engine against itself in four rounds, each
+  round played with the network of the round before (4.9 million from step 09, 4.9 million with
+  the first network, 6.0 million with the second, 6.0 million with the third). Every position has
+  the score of its search and the result of its game, blended with weight 0.7 on the score. The
+  training uses Adam with a batch of 16,384, 20 epochs and a learning rate of 0.003 that falls to
+  0.0003. The held-out error is 0.01737, against 0.02640 for the hand written evaluation on the
+  same targets, and the quantized network differs from the floating point one by 2.17cp (the
+  scores are 123cp in size on average).
+- The Leela positions come from 60 tars of the published training games
+  (`training-cleanvisits-20260724-0000` to `0059`, 600,000 games and 64.7 million positions, in
+  18 GB). `scripts/convert_lc0.py --every 2` keeps every second position from the seventh ply on,
+  except those that a capture or a promotion follows and those with castling rights that do not
+  fit a standard position, and takes the mean of the root and best values of Leela as the score.
+  `train_nnue` leaves out the positions in check, 1.65 million of them.
+- The training choices were tested one at a time, each network against the network of the three
+  self-play rounds, in games of 50ms per move. The table has the results that decided the choices
+  (the others are in the [record](matches/network/network-training-experiments.txt)):
+
+  | Network | Held-out error | Score against the network of three rounds |
+  |:--------|---------------:|:------------------------------------------|
+  | Leela positions only, 5.9 million | | -180 Elo (300 games) |
+  | Leela and self-play, 38.7 million | 0.01788 | +55 Elo (300 games) |
+  | Twice the Leela positions, 55.7 million | 0.01904 | +66 Elo (300 games) |
+  | 256 values for each side | 0.01763 | +43 Elo (300 games) |
+  | 512 values for each side | 0.01766 | -37 Elo (300 games) |
+  | 8 output layers | 0.01761 | +97 Elo (800 games), 4 layers +79, 16 layers +96 |
+  | 8 king buckets and a mirror | 0.01844 | +55 and +24 Elo (two seeds) |
+  | King context: the mirror only | 0.01738 | +88 Elo (300 games) |
+  | **King context: half of the board and the mirror** | **0.01737** | **+109 Elo (800 games)** |
+  | Threat inputs added to the first layer | 0.01678 | +55 and +60 Elo, 26% slower |
+  | Threat inputs added to the output | 0.01701 | +101 Elo (800 games), 18% slower |
+  | A second layer of 16 units | 0.01697 | -64 and -23 Elo, 38% slower |
+  | A fifth round of self-play | | +118 and +127 Elo, 2 puzzles missed |
+
+  The held-out errors of the first rows belong to other data sets, so only rows of the same
+  data are comparable. The network of the last bold row was trained again by `train_nnue`, which
+  gave the same weights as the run of the experiments, bit for bit.
+- Four more groups of runs changed nothing. A cross entropy loss, a learning rate of 0.001 or
+  0.01, 30 or 40 epochs and a batch of 8,192 stayed within the noise of +24 to +76 Elo. A loss
+  that counts the errors that are too low 1.5 or 2 times, or the positions near zero twice,
+  raised the held-out error and scored +8 to +64 Elo.
+- Among the 18 strongest networks, the root mean square error and the mean
+  absolute error of the score have a correlation of about -0.6 with the Elo, and the rank
+  correlation of the tails (scores 100 or 200cp too low) is about -0.5.
 - The search is faster with the network. In one interleaved run of `bench_search` (the two
   presets alternate over seven rounds, so that the state of the machine affects both alike), step
-  10 searches 4.0 million positions per second against 3.8 million, and it visits fewer positions
-  for the same depth: 38,146 against 52,792 at depth 10. Depth 10 takes 9.6ms against 14.1ms,
-  which is 1.46 times faster. The rows of step 10 in the tables come from a later session than
-  the rows before it, and the machine was faster in it (perft runs at 63 against 44 million
-  positions per second), so only the interleaved run compares the two steps.
+  10 searches 4.24 million positions per second against 3.58 million, and it visits fewer positions
+  for the same depth: 45,163 against 52,792 at depth 10. Depth 10 takes 10.65ms against 14.76ms,
+  which is 1.39 times faster.
+- Changes of the code that leave the moves alone: the transposition table entry is prefetched when a
+  move is made (+3%), the functions that add and sum rows exist in an AVX2 and a base version
+  that the program chooses at start (+9% together with the prefetch), and the network update of a
+  move that the pruning skips is not computed (+7%). Together they make the benchmark of depth 12
+  (7,490,126 positions, one core) 20% faster, from 3.69 to 4.43 million positions per second. The
+  hardware counters for the same job, before and after all the changes of this step, are 25.1 and
+  20.2 billion instructions, 8.6 and 7.1 billion cycles, an IPC of 2.92 and 2.87, 1.99% and 2.10%
+  branch misses, and 61.6% and 46.6% last level cache misses.
+- Search changes on the network, each against the preset without it with the sequential test
+  (Elo bounds 0 and 6, 5% errors, at most 3,000 pairs), at a fixed 50,000 nodes per move and at
+  50ms per move. The matches at a fixed time decide, because a pruned move is not a node:
+
+  | Change | Fixed nodes | 50ms per move |
+  |:-------|:------------|:--------------|
+  | Correction history | +16 (H1, 2,530 games) | +15 (H1, 2,924 games), kept |
+  | Probcut | +6 (no decision, 6,000 games) | +28 with correction history (H1), kept |
+  | Logarithmic reduction table | +8 (no decision, 6,000 games) | +22 with correction, kept |
+  | Correction history, probcut and the table | | +36 (H1, 1,018 games, interval +17 to +55) |
+  | Late move pruning | +39 (H1, 858 games) | -6 (H0, 3,824 games), not kept |
+  | Singular extensions | +3 (12,000 games, no decision) | not tested |
+  | Double and negative extensions, multicut | -4 and -5 (H0) | not tested |
+  | Internal iterative reduction | -1 (6,000 games) | not tested |
+  | Razoring | -10 (H0, 2,400 games) | not tested |
+  | Capture history | -3 (H0, 5,096 games) | not tested |
+  | A second continuation score | 0 (6,000 games) | not tested |
+  | The counter move first | -9 (H0, 2,436 games) | not tested |
+  | Two-way buckets in the table | -5 (H0, 3,918 games) | not tested |
+  | History by piece | -7 (H0, 3,514 games) | not tested |
+
+  The raw lines are in [network-refinements](matches/search-experiments/network-refinements.txt).
+  The double and negative extensions and the multicut are not in the engine.
+- Against the engine of the repository before step 10 was refined (the network of three rounds,
+  with the search switches that it had), the refined engine scores +131 Elo at 50ms per move
+  (484 wins, 121 draws, 195 losses in 800 games, interval +106 to +158) and +153 Elo at 200ms
+  per move (244 wins, 78 draws, 78 losses in 400 games, interval +117 to +193). Both engines use
+  one thread and a table of 16MB.
 - Against Stockfish 19 at 1000ms per move, limited with `UCI_LimitStrength` and `UCI_Elo`, step 10
-  scores 0.86, 0.86, 0.53, 0.32 and 0.15 at the levels 2400, 2600, 2800, 3000 and 3190 (250 games
-  in [one run](matches/network/network-vs-stockfish-1000ms-seed21.txt)). The rating is 2848, with
-  a 95% interval of 2793 to 2902, against 2587 for step 09. The scale is calibrated by Stockfish
-  for longer time controls, so the number applies at this speed and on this machine.
-- The network misses one of the 1,404 mate puzzles at the depth of the puzzle (a mate in 3), and
-  solves it two plies deeper. Step 09 solves all of them, so the rule of the puzzle test rejects
-  the network by one puzzle. [search_test](../tests/search_test.cpp) allows two plies more for
-  the `network` preset.
+  scores 0.95, 0.91, 0.71, 0.34 and 0.18 at the levels 2400, 2600, 2800, 3000 and 3190 (250 games
+  in [one run](matches/network/network-vs-stockfish-1000ms-seed21.txt)). The rating is 2931,
+  with a 95% interval of 2876 to 2986, against 2587 for step 09. The scale is calibrated by
+  Stockfish for longer time controls, so the number applies at this speed and on this machine,
+  and the scale ends at 3190.
+- The network misses one of the 1,404 mate puzzles at the depth of the puzzle (a mate in 3,
+  `1k6/8/1PPK2p1/P5P1/8/5n2/7p/8 w`), where the search reports a score of 338cp at depth 6 and
+  finds the mate at depth 8. Step 09 solves all of them, so
+  [search_test](../tests/search_test.cpp), which requires every puzzle, fails for the `network`
+  preset by that one puzzle. The miss comes from the network: it stays with the switches of this
+  step on or off.
 - Tablebases: 3, 4 and 5 piece Syzygy tables give 0.507 over 3,000 games (no decision, +5 Elo
   with an interval of -6 to +16). The games start from random openings and rarely reach a
   position with five pieces or fewer, so the result shows no harm and does not measure a gain.
-- Retests of the search techniques on the network, each against the base before it:
+- Retests of the search techniques on the network of three rounds, each against the base before it:
 
   | Change | Score | Games | Result |
   |:-------|------:|------:|:-------|
@@ -262,6 +342,7 @@ The table shows the speed of move generation and the correctness of every step.
 | 07-pruning-and-reductions  |      43.55 |        704 |         22.0 |      60 |   6 of 6 |
 | 08-search-refinements      |      44.12 |        658 |         20.5 |      62 |   6 of 6 |
 | 09-tuned-evaluation        |      44.24 |        655 |         20.6 |     133 |   6 of 6 |
+| 10-network-evaluation      |      62.70 |        437 |         13.6 |      88 |   6 of 6 |
 
 ### Search time
 
@@ -281,6 +362,7 @@ the step was not measured at that depth.
 | 07-pruning-and-reductions  | 0.07 |  0.19 |   0.51 | 1.21 |  2.50 |
 | 08-search-refinements      | 0.03 |  0.10 |   0.25 | 0.47 |  0.71 |
 | 09-tuned-evaluation        | 0.04 |  0.13 |   0.25 | 0.64 |  0.96 |
+| 10-network-evaluation      | 0.05 |  0.10 |   0.18 | 0.29 |  0.44 |
 
 | Step                       |    d6 |   d7 |    d8 |    d9 |   d10 |
 |:---------------------------|------:|-----:|------:|------:|------:|
@@ -293,6 +375,7 @@ the step was not measured at that depth.
 | 07-pruning-and-reductions  |  5.79 | 10.5 |  20.8 |  40.5 |  80.4 |
 | 08-search-refinements      |  1.39 | 2.35 |  4.34 |  8.41 |  17.2 |
 | 09-tuned-evaluation        |  1.82 | 3.29 |  6.01 |  10.9 |  19.0 |
+| 10-network-evaluation      |  0.93 | 1.77 |  3.19 |  5.63 |  11.0 |
 
 ### Search nodes
 
@@ -310,6 +393,7 @@ The table shows the mean nodes per move over the same 15 positions, with the sam
 | 07-pruning-and-reductions  |   244 |   767 |   2,341 |  5,493 |  11,830 |
 | 08-search-refinements      |    80 |   316 |     779 |  1,527 |   2,325 |
 | 09-tuned-evaluation        |    90 |   326 |     667 |  1,830 |   2,687 |
+| 10-network-evaluation      |    82 |   288 |     596 |  1,138 |   1,792 |
 
 | Step                       |         d6 |      d7 |        d8 |        d9 |        d10 |
 |:---------------------------|-----------:|--------:|----------:|----------:|-----------:|
@@ -322,6 +406,7 @@ The table shows the mean nodes per move over the same 15 positions, with the sam
 | 07-pruning-and-reductions  |     27,082 |  52,488 |   104,550 |   203,616 |    401,971 |
 | 08-search-refinements      |      4,335 |   8,333 |    15,464 |    29,653 |     61,642 |
 | 09-tuned-evaluation        |      5,157 |   9,458 |    17,101 |    30,864 |     52,792 |
+| 10-network-evaluation      |      4,030 |   7,602 |    13,729 |    23,557 |     45,163 |
 
 ### Speedup
 
@@ -339,6 +424,7 @@ ratio above 1 means that the step is faster.
 | 07-pruning-and-reductions  | 06-iterative-deepening-pvs |   0.84x | 1.49x |  2.17x |  4.63x |
 | 08-search-refinements      |  07-pruning-and-reductions |   2.06x | 2.55x |  3.51x |  4.18x |
 | 09-tuned-evaluation        |      08-search-refinements |   0.99x | 0.74x |  0.74x |  0.76x |
+| 10-network-evaluation      |        09-tuned-evaluation |   1.38x | 2.20x |  2.16x |  1.97x |
 
 ### Game phases
 
@@ -356,6 +442,7 @@ The table shows the mean milliseconds per move at depth 3 for each class of posi
 | 07-pruning-and-reductions  |    0.80 |       0.61 |    0.12 |
 | 08-search-refinements      |    0.38 |       0.24 |    0.12 |
 | 09-tuned-evaluation        |    0.40 |       0.23 |    0.12 |
+| 10-network-evaluation      |    0.23 |       0.19 |    0.13 |
 
 ### Search refinements
 

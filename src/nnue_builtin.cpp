@@ -45,11 +45,19 @@ namespace chess::nnue {
 
             for (int h = 0; h < kHidden; ++h) {
                 net->feature_bias[h] = kBuiltinFeatureBias[h];
-                net->output_weights[0][h] = kBuiltinOutputWeights[h];
-                net->output_weights[1][h] = kBuiltinOutputWeights[kHidden + h];
             }
 
-            net->output_bias = kBuiltinOutputBias;
+            for (int bucket = 0; bucket < kBuckets; ++bucket) {
+                const size_t base = static_cast<size_t>(bucket) * 2 * kHidden;
+
+                for (int h = 0; h < kHidden; ++h) {
+                    net->output_weights[bucket][0][h] = kBuiltinOutputWeights[base + h];
+                    net->output_weights[bucket][1][h] = kBuiltinOutputWeights[base + kHidden + h];
+                }
+
+                net->output_bias[bucket] = kBuiltinOutputBias[bucket];
+            }
+
             return std::shared_ptr<const Network>(net);
         }();
         return network;

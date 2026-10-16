@@ -24,8 +24,6 @@ namespace chess {
 
         constexpr Bitboard kRank2 = 0x000000000000FF00ULL;
         constexpr Bitboard kRank7 = 0x00FF000000000000ULL;
-        constexpr Bitboard kFileA = 0x0101010101010101ULL;
-        constexpr Bitboard kFileH = 0x8080808080808080ULL;
 
         inline Square pop_lsb(Bitboard &bb) {
             const Square s = __builtin_ctzll(bb);

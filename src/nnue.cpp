@@ -22,51 +22,81 @@
 #include <cstring>
 #include <fstream>
 
+// On x86-64, the functions that add and sum rows of weights are compiled twice, once for AVX2 and
+// once for the base instruction set, and the program picks one when it starts.
+#if defined(__x86_64__) && defined(__GNUC__) && !defined(__clang__)
+#define CHESS_SIMD_CLONES __attribute__((target_clones("avx2", "default")))
+#else
+#define CHESS_SIMD_CLONES
+#endif
+
+#define CHESS_INLINE inline __attribute__((always_inline))
+
 namespace chess::nnue {
 
     namespace {
 
-        constexpr char kMagic[8] = {'M', 'R', 'D', 'N', 'N', 'U', 'E', '2'};
+        constexpr char kMagic[8] = {'M', 'R', 'D', 'N', 'N', 'U', 'E', '3'};
 
-        void add_row(int16_t *values, const int16_t *row) {
+        CHESS_INLINE void add_row(int16_t *values, const int16_t *row) {
             for (int i = 0; i < kHidden; ++i) {
                 values[i] = static_cast<int16_t>(values[i] + row[i]);
             }
         }
 
-        void sub_row(int16_t *values, const int16_t *row) {
+        CHESS_INLINE void sub_row(int16_t *values, const int16_t *row) {
             for (int i = 0; i < kHidden; ++i) {
                 values[i] = static_cast<int16_t>(values[i] - row[i]);
             }
         }
 
-        void add_piece(const Network &network, Accumulator &acc, Piece piece, Square square) {
-            add_row(acc.values[0], network.feature_weights[feature_index(0, piece, square)]);
-            add_row(acc.values[1], network.feature_weights[feature_index(1, piece, square)]);
+        CHESS_INLINE void add_piece(const Network &network, Accumulator &acc, Piece piece,
+                                    Square square) {
+            for (int p = 0; p < 2; ++p) {
+                add_row(
+                    acc.values[p],
+                    network.feature_weights[king_feature(p, piece, square, acc.kb[p], acc.mir[p])]);
+            }
         }
 
-        void remove_piece(const Network &network, Accumulator &acc, Piece piece, Square square) {
-            sub_row(acc.values[0], network.feature_weights[feature_index(0, piece, square)]);
-            sub_row(acc.values[1], network.feature_weights[feature_index(1, piece, square)]);
+        CHESS_INLINE void remove_piece(const Network &network, Accumulator &acc, Piece piece,
+                                       Square square) {
+            for (int p = 0; p < 2; ++p) {
+                sub_row(
+                    acc.values[p],
+                    network.feature_weights[king_feature(p, piece, square, acc.kb[p], acc.mir[p])]);
+            }
+        }
+
+        // Computes one point of view of an accumulator from the pieces of a position.
+        CHESS_INLINE void refresh_perspective(const Network &network, const Position &pos, int p,
+                                              Accumulator &out) {
+            int kb = 0, mir = 0;
+            king_context(p, pos.king_square(p == 0 ? kWhite : kBlack), kb, mir);
+            out.kb[p] = static_cast<uint8_t>(kb);
+            out.mir[p] = static_cast<uint8_t>(mir);
+            std::memcpy(out.values[p], network.feature_bias, sizeof(out.values[p]));
+
+            for (int square = 0; square < kSquares; ++square) {
+                const Piece piece = pos.piece_on(static_cast<Square>(square));
+
+                if (piece != kNoPiece) {
+                    add_row(out.values[p], network.feature_weights[king_feature(
+                                               p, piece, square, out.kb[p], out.mir[p])]);
+                }
+            }
         }
 
     }  // namespace
 
-    void refresh(const Network &network, const Position &pos, Accumulator &out) {
-        std::memcpy(out.values[0], network.feature_bias, sizeof(out.values[0]));
-        std::memcpy(out.values[1], network.feature_bias, sizeof(out.values[1]));
-
-        for (int square = 0; square < kSquares; ++square) {
-            const Piece piece = pos.piece_on(static_cast<Square>(square));
-
-            if (piece != kNoPiece) {
-                add_piece(network, out, piece, static_cast<Square>(square));
-            }
-        }
+    CHESS_SIMD_CLONES void refresh(const Network &network, const Position &pos, Accumulator &out) {
+        out.count = __builtin_popcountll(pos.occupied());
+        refresh_perspective(network, pos, 0, out);
+        refresh_perspective(network, pos, 1, out);
     }
 
-    void update(const Network &network, const Position &pos, Move move, const Accumulator &before,
-                Accumulator &after) {
+    CHESS_SIMD_CLONES void update(const Network &network, const Position &pos, Move move,
+                                  const Accumulator &before, Accumulator &after) {
         after = before;
 
         const Square from = move.from();
@@ -79,8 +109,10 @@ namespace chess::nnue {
         if (move.is_en_passant()) {
             const Square captured = static_cast<Square>(us == kWhite ? to - 8 : to + 8);
             remove_piece(network, after, make_piece(~us, kPawn), captured);
+            --after.count;
         } else if (move.is_capture()) {
             remove_piece(network, after, pos.piece_on(to), to);
+            --after.count;
         }
 
         if (move.is_castle()) {
@@ -94,17 +126,33 @@ namespace chess::nnue {
 
         const Piece placed = move.is_promotion() ? make_piece(us, move.promotion_type()) : moving;
         add_piece(network, after, placed, to);
+
+        // A king that changes bucket or mirror changes every input of its own point of view.
+        if (piece_type(moving) == kKing) {
+            const int p = us == kWhite ? 0 : 1;
+            int kb = 0, mir = 0;
+            king_context(p, to, kb, mir);
+
+            if (kb != before.kb[p] || mir != before.mir[p]) {
+                Position next = pos;
+                next.make_move(move);
+                refresh_perspective(network, next, p, after);
+            }
+        }
     }
 
-    int evaluate(const Network &network, const Accumulator &acc, Color side_to_move) {
+    CHESS_SIMD_CLONES int evaluate(const Network &network, const Accumulator &acc,
+                                   Color side_to_move) {
         const int16_t *us = acc.values[side_to_move];
         const int16_t *them = acc.values[~side_to_move];
-        int32_t sum = network.output_bias;
+        const int bucket = bucket_of(acc.count);
+        int32_t sum = network.output_bias[bucket];
 
         for (int i = 0; i < kHidden; ++i) {
             const int32_t a = std::clamp<int32_t>(us[i], 0, kQuantInput);
             const int32_t b = std::clamp<int32_t>(them[i], 0, kQuantInput);
-            sum += a * network.output_weights[0][i] + b * network.output_weights[1][i];
+            sum +=
+                a * network.output_weights[bucket][0][i] + b * network.output_weights[bucket][1][i];
         }
 
         // sum is the output in units of 1 / (kQuantInput * kQuantOutput).
@@ -119,7 +167,8 @@ namespace chess::nnue {
             return false;
         }
 
-        const int32_t header[5] = {kInputs, kHidden, kQuantInput, kQuantOutput, kOutputScale};
+        const int32_t header[6] = {kInputs,      kHidden,      kQuantInput,
+                                   kQuantOutput, kOutputScale, kBuckets};
         out.write(kMagic, sizeof(kMagic));
         out.write(reinterpret_cast<const char *>(header), sizeof(header));
         out.write(reinterpret_cast<const char *>(network.feature_weights),
@@ -128,8 +177,7 @@ namespace chess::nnue {
                   sizeof(network.feature_bias));
         out.write(reinterpret_cast<const char *>(network.output_weights),
                   sizeof(network.output_weights));
-        out.write(reinterpret_cast<const char *>(&network.output_bias),
-                  sizeof(network.output_bias));
+        out.write(reinterpret_cast<const char *>(network.output_bias), sizeof(network.output_bias));
         return static_cast<bool>(out);
     }
 
@@ -141,12 +189,13 @@ namespace chess::nnue {
         }
 
         char magic[8];
-        int32_t header[5] = {0, 0, 0, 0, 0};
+        int32_t header[6] = {0, 0, 0, 0, 0, 0};
         in.read(magic, sizeof(magic));
         in.read(reinterpret_cast<char *>(header), sizeof(header));
 
         // The sizes and scales of the file have to be those of this build.
-        const int32_t expected[5] = {kInputs, kHidden, kQuantInput, kQuantOutput, kOutputScale};
+        const int32_t expected[6] = {kInputs,      kHidden,      kQuantInput,
+                                     kQuantOutput, kOutputScale, kBuckets};
 
         if (!in || std::memcmp(magic, kMagic, sizeof(kMagic)) != 0 ||
             std::memcmp(header, expected, sizeof(header)) != 0) {
@@ -158,7 +207,7 @@ namespace chess::nnue {
                 sizeof(network->feature_weights));
         in.read(reinterpret_cast<char *>(network->feature_bias), sizeof(network->feature_bias));
         in.read(reinterpret_cast<char *>(network->output_weights), sizeof(network->output_weights));
-        in.read(reinterpret_cast<char *>(&network->output_bias), sizeof(network->output_bias));
+        in.read(reinterpret_cast<char *>(network->output_bias), sizeof(network->output_bias));
 
         if (!in) {
             return nullptr;

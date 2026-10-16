@@ -37,6 +37,7 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   └── version.hpp              # the version of the engine
 ├── results                      # recorded numbers, see results/README.md
 ├── scripts
+│   ├── convert_lc0.py           # converts Leela Chess Zero training games into training positions
 │   ├── benchmark.sh             # records one step under results/baselines
 │   ├── benchmark_steps.sh       # measures the presets in one process, interleaved
 │   ├── run_matches.sh           # runs the matches recorded under results/matches
@@ -74,7 +75,7 @@ This page describes the code: the engine, the UCI program, the tests and the ben
 │   ├── book_test.cpp            # book moves are legal, and games vary
 │   ├── timeman_test.cpp         # the time budget stays inside the clock
 │   ├── uci_test.cpp             # scripted UCI sessions
-│   ├── nnue_test.cpp            # incremental accumulators, symmetry, file round trip
+│   ├── nnue_test.cpp            # incremental accumulators, king buckets, symmetry, file round trip
 │   ├── syzygy_test.cpp          # probing, root moves and the search with small tables
 │   ├── stress_test.cpp          # random games checked against the rules
 │   └── sprt_test.cpp            # the sequential test, with simulated error rates
@@ -193,28 +194,43 @@ ctest --test-dir build --output-on-failure
   and that the search uses the tables and stops using them with the switch off.
 - [nnue_test](tests/nnue_test.cpp) checks that the accumulator that follows a line of moves equals
   the one computed from the board (random games, and castling, en passant and promotion move by
-  move), that a position and its mirror score the same, that a network file loads back, and that
-  a search with a network is repeatable.
+  move, and games of two kings and a few pieces where the kings cross the middle of the board and
+  change bucket or mirror), the king buckets, mirrors and output layers of given squares and
+  piece counts, that a position and its mirror score the same, that a network file loads back,
+  and that a search with a network is repeatable.
 
 ## Network evaluation
 
 ```bash
 build/gen_positions --games 60000 --depth 6 --skip 2 --threads 24 --out positions.txt
-build/train_nnue --data positions.txt --out net.nnue --epochs 30
+build/train_nnue --data positions.txt --out net.nnue --epochs 20 --lr 0.003 --inc src/nnue_net.inc
 build/play_match --a tuned --b tuned --nnue-a net.nnue --sprt --elo0 0 --elo1 10
 ```
 
-A network (see [nnue.hpp](include/nnue.hpp)) maps the 768 combinations of a piece and a square to
-128 values for each side, clips them to [0, 255], and combines both sides into one score. The
-values of a position follow the search: a move changes a few rows of the weights, so that an
-evaluation costs one pass over 256 values. Weights are 16-bit integers.
+A network (see [nnue.hpp](include/nnue.hpp)) maps the combinations of a piece and a square to 128
+values for each side, clips them to [0, 255], and combines both sides into one score. There are
+768 combinations (12 kinds of piece on 64 squares) for each king bucket. The king bucket of a side
+is the half of the board by rank that holds its own king, after the board is mirrored so that the
+king stands on the files a to d, which gives 2 x 768 inputs. One of 8 output layers is used, chosen
+by the number of pieces on the board (2 to 5 pieces the first, 6 to 9 the second, and so on).
+
+The values of a position follow the search: a move changes a few rows of the weights. A king that
+moves to the other half or across the mirror changes every input of its side, and the values of
+that side are computed again. An evaluation costs one pass over 256 values. Weights are 16-bit
+integers, and on x86-64 the functions that add and sum rows exist in an AVX2 version and a base
+version, of which the program picks one when it starts.
 
 - [gen_positions](tools/gen_positions.cpp) writes each position with the result of its game and
   the search score.
+- [convert_lc0.py](scripts/convert_lc0.py) writes positions in the same format from the training
+  games of Leela Chess Zero, with the search value of Leela as the score (see
+  [results](results/README.md) for the choice of tars and the filters). It needs NumPy.
 - [train_nnue](tools/train_nnue.cpp) fits the weights in floating point with Adam, to the
   expected points of a blend of the search score and the result, with a fifth of the games held
   out. It prints the held-out loss of the hand written evaluation on the same targets, and
-  compares the quantized network with the floating point one.
+  compares the quantized network with the floating point one. `--inc FILE` writes the network as
+  the source file `src/nnue_net.inc` that is compiled into the library. A position in check is
+  left out of the data.
 - `play_match`, `uci_match`, `mate_check` and `bench_search` take `--nnue FILE` (`--nnue-a` and
   `--nnue-b` for `play_match`), and `SearchOptions::nnue` holds a network. The `EvalFile` option
   of the UCI program loads one.

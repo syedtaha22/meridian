@@ -77,7 +77,7 @@ namespace chess {
         bool futility = true;            ///< Skip quiet moves near the leaves that cannot help.
         bool razoring = false;           ///< Go to quiescence when the static score is far low.
         bool late_move_pruning = false;  ///< Skip late quiet moves at shallow depth.
-        bool lmr_table = false;          ///< Reduce late moves by a logarithmic table.
+        bool lmr_table = true;           ///< Reduce late moves by a logarithmic table.
         bool iir = false;                ///< Reduce a deep node that has no table move.
         bool null_margin = true;         ///< Reduce more in the null move at a large margin.
         bool aspiration = true;          ///< Search each pass in a window around the last.
@@ -100,6 +100,8 @@ namespace chess {
         bool continuation2 = false;          ///< A second continuation score, two plies back.
         bool counter_first = false;          ///< Try the counter move before the killers.
         bool underpromotions_late = false;   ///< Try knight, rook and bishop promotions late.
+        bool correction_history = true;      ///< Correct the static score by the pawn structure.
+        bool probcut = true;                 ///< Prove a node by a shallow search of captures.
 
         // Parameters of the techniques above, in centipawns unless stated otherwise.
         int rfp_margin = 54;     ///< Reverse futility margin per ply.
@@ -114,6 +116,8 @@ namespace chess {
         int null_margin_step = 271;    ///< Margin over beta that adds one ply to the null move.
         int aspiration_delta = 24;     ///< Half width of the first aspiration window.
         int singular_depth = 8;        ///< Smallest depth of a singular extension search.
+        int probcut_margin = 200;      ///< Margin over beta of the probcut search.
+        int correction_limit = 16384;  ///< Largest correction, in 1/256 of a centipawn.
         int threads = 1;               ///< Search threads that share the table.
         std::vector<Move> root_moves;  ///< The moves the root is limited to; empty means all.
         int policy_scale = 16;         ///< Ordering score of one logit of the policy, in 1/64.
@@ -211,6 +215,15 @@ namespace chess {
     };
 
     /**
+     * The index of the pawn structure of a position in the table of corrections.
+     */
+    inline size_t correction_index(const Position &pos) noexcept {
+        const uint64_t h = (pos.pieces(kWhite, kPawn) * 0x9E3779B97F4A7C15ULL) ^
+                           ((pos.pieces(kBlack, kPawn) + 0x1234567ULL) * 0xC2B2AE3D27D4EB4FULL);
+        return static_cast<size_t>(h >> 50);
+    }
+
+    /**
      * @brief Searches positions with alpha-beta.
      *
      * The transposition table and the move ordering tables persist between
@@ -285,7 +298,11 @@ namespace chess {
          */
         int static_evaluation(const Position &pos, int ply) const noexcept {
             if (nnue_ != nullptr) {
-                return nnue::evaluate(*nnue_, acc_[static_cast<size_t>(ply)], pos.side_to_move());
+                const int raw =
+                    nnue::evaluate(*nnue_, acc_[static_cast<size_t>(ply)], pos.side_to_move());
+                return options_.correction_history
+                           ? raw + correction_[pos.side_to_move()][correction_index(pos)] / 256
+                           : raw;
             }
             if (options_.eval_params) {
                 return evaluate(pos, *options_.eval_params);
@@ -325,6 +342,9 @@ namespace chess {
         // The piece and destination of the move that led to each ply, or -1.
         int stack_[kMaxPly];
 
+        // The correction of the static score by the pawn structure, for each side to move.
+        int16_t correction_[2][16384];
+
         // The largest position that the loaded tablebases decide, as of the start of the search.
         int tb_limit_ = 0;
 
@@ -357,7 +377,6 @@ namespace chess {
         double volatility_ = 20;
 
         Move root_best_;
-        int root_best_score_ = 0;
         std::vector<Move> root_order_;
 
         std::function<void(const IterationInfo &)> info_callback_;
