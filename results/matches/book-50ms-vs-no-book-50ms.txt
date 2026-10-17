@@ -1,2 +1,0 @@
-full (50ms) vs full (50ms)
-games 400: +123 =151 -126  score 0.496  (95% interval 0.458 to 0.535)  Elo -3 (-30 to +24)

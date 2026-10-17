@@ -1,3 +1,0 @@
-full (50ms) vs full (50ms)
-games 254: +144 =30 -80  score 0.626  (95% interval 0.570 to 0.682)  Elo +89 (+49 to +132)
-SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 2.99 (bounds -2.94, 2.94) after 254 games: H1 accepted: the first configuration is stronger

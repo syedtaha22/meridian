@@ -126,7 +126,6 @@ at random among the book moves of a position, weighted by score. The book has 39
 The tests check the engine in three ways:
 
 - Move generation gives the published perft counts for six reference positions.
-- The search solves 1,404 puzzles that ask for mate in one, two or three moves.
 - Scripted UCI sessions check the handshake, the options, every kind of limit, a stop, pondering,
   the book, the tablebases and bad input, and the time budget stays inside the clock.
 - The engine runs under AddressSanitizer and UBSan.
@@ -142,8 +141,7 @@ benchmark records the time and the number of nodes. Each configuration of the se
 technique, or one group of techniques, to the previous one.
 
 The benchmark runs on one pinned core of an i9-13900HX. The machine is otherwise idle. Node counts
-do not change between runs. The full tables, the method and the raw data are in
-[results](results/README.md).
+do not change between runs.
 
 The table shows the mean time per move at depth 3, 5 and 6. Step 00 is the original engine.
 
@@ -260,16 +258,12 @@ The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 
 ```bash
 .
-├── bench           # benchmark programs and the positions they read
 ├── book            # the whitelist of the opening book
 ├── include         # headers
 ├── src             # the engine library and the UCI program
-├── tests           # perft, mate puzzles, time management, UCI sessions
+├── tests           # perft, search, time management, UCI sessions
 ├── third_party     # Syzygy probing code, with its license
-├── tools           # matches, tuning, training
-├── scripts         # experiments and reports
-├── results         # recorded benchmark and match results
-├── ENGINE.md       # the code, the UCI program and how to run the benchmarks
+├── ENGINE.md       # the code and the UCI program
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md       # This file
@@ -281,8 +275,7 @@ The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 ## Roadmap
 
 Quiescence search makes up 57% to 72% of all nodes at depths 5 to 10, and the first move tried
-causes the cutoff 94% of the time. The results of the ideas that were tested are in
-[results](results/README.md). These remain open.
+causes the cutoff 94% of the time. The ideas below remain open.
 
 ### Close to a gain
 
@@ -295,8 +288,6 @@ causes the cutoff 94% of the time. The results of the ideas that were tested are
 - **Threat inputs.** Inputs for the pieces that the other side attacks lowered the held-out error
   from 0.01737 to 0.01678, and they cost 18% to 26% of the speed because they are computed for
   every position. Updating them with the move, and not for every position, could make them pay.
-- **The puzzle that the network misses.** One of the 1,404 mate puzzles is a mate in 3 that the
-  search finds at depth 8. The test requires every mate in 3 to be found by depth 6, so it fails.
 
 ### Infrastructure
 
@@ -321,8 +312,7 @@ causes the cutoff 94% of the time. The results of the ideas that were tested are
 
 The engine began as Horizon, a chess engine with a Windows desktop interface built on raylib. Its
 rules, search and evaluation were rewritten as a library, and the interface moved to the web.
-[results](results/README.md) records the speed and the rules correctness of the
-original engine next to every later step. The table shows the original engine:
+The table shows the measurements of the original engine:
 
 | Property of the original engine | Measured |
 |---|---|
@@ -331,6 +321,16 @@ original engine next to every later step. The table shows the original engine:
 | Perft against published counts | 13 of 24 runs correct (castling and promotion) |
 | Move generation | ~70 thousand nodes per second |
 | Playing strength at depth 3 | about 1130 on Stockfish's scale (interval 1044 to 1220) |
+
+## Acknowledgements
+
+The Syzygy probing code in [third_party/fathom](third_party/fathom) is distributed under its own
+MIT license, which is in that directory.
+
+The network is trained on positions from the training games of
+[Leela Chess Zero](https://lczero.org/dev/wiki/training-data/), which are made available under the
+[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/), and on games of the
+engine against itself.
 
 ## Contributing
 
@@ -343,14 +343,6 @@ Copyright (C) 2026 Syed Taha.
 
 Meridian is free software: it is distributed under the GNU General Public License, either
 version 3 of the License or, at your option, any later version. See [LICENSE](LICENSE).
-
-The Syzygy probing code in [third_party/fathom](third_party/fathom) is distributed under its own
-MIT license, which is in that directory.
-
-The network is trained on positions from the training games of
-[Leela Chess Zero](https://lczero.org/dev/wiki/training-data/), which are made available under the
-[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/), and on games of the
-engine against itself.
 
 [blog-link]:          https://syedtaha22.github.io/blog/chess-bitboards-and-benchmarks/
 [build-link]:         https://github.com/syedtaha22/meridian/actions/workflows/ci.yml

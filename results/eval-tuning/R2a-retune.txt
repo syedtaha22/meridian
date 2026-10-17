@@ -1,3 +1,0 @@
-full (50ms) vs full (50ms)
-games 3000: +1189 =660 -1151  score 0.506  (95% interval 0.491 to 0.522)  Elo +4 (-7 to +15)
-SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR -0.26 (bounds -2.94, 2.94) after 3000 games: no decision

@@ -8,30 +8,25 @@ to build and test it, and what a change should include.
 ```bash
 .
 ├── .github            # CI, issue and pull request templates
-├── bench              # benchmark programs and position suites
 ├── book               # the whitelist of the opening book
 ├── include            # headers
-├── results            # recorded benchmark and match results
-├── scripts            # experiments and reports
 ├── src                # the engine library and the UCI program
-├── tests              # perft, mate puzzles, time management, UCI and search tests
+├── tests              # perft, time management, UCI and search tests
 ├── third_party        # code of other projects, with their licenses
-├── tools              # matches, tuning, training
 ├── CMakeLists.txt     # the build
 ├── CONTRIBUTING.md
-├── ENGINE.md          # the code, the UCI program and how to run the benchmarks
+├── ENGINE.md          # the code and the UCI program
 ├── LICENSE
 ├── README.md          # where the project started and where it stands
 ├── SECURITY.md
 └── VERSIONING.md      # what changes the version of the engine
 ```
 
-The code, the UCI program and the benchmarks are described in [ENGINE.md](ENGINE.md).
+The code and the UCI program are described in [ENGINE.md](ENGINE.md).
 
 ## Build and test
 
-Requirements: a C++20 compiler and CMake 3.20 or newer. CMake fetches the one dependency of the
-tools.
+Requirements: a C++20 compiler and CMake 3.20 or newer.
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -51,33 +46,20 @@ Before opening a pull request:
 ### Changes to rules or search
 
 - Move generation should keep matching the published perft counts.
-  [position_test](tests/position_test.cpp) checks the six reference positions, and
-  [search_test](tests/search_test.cpp) solves the mate-in-one, two and three puzzles.
+  [position_test](tests/position_test.cpp) checks the six reference positions.
 - A new search technique should be a switch in `SearchOptions` and a named preset. Then its
   effect can be measured on its own.
 - The pull request should report the change in nodes at a fixed depth. It should also report
-  a match result against the previous preset (`build/play_match`, 200 games or more).
+  a match result against the previous preset, with the number of games.
 - Node counts are the stable measure on a shared machine. Times should come from an idle
   machine, pinned to one core, and the number of repeats should be stated.
-
-### Benchmarks
-
-[benchmark.sh](scripts/benchmark.sh) records one step under
-[baselines](results/baselines).
-[benchmark_steps.sh](scripts/benchmark_steps.sh) measures the presets in one process.
-`build/report results` regenerates the tables in
-[results/README.md](results/README.md).
-
-Results from a different machine should be recorded with their `environment.json`. They should
-not replace the existing baselines.
 
 ## Pull requests
 
 - A pull request should contain one change, describe what it does and why, and link the issue
   it closes.
 - CI should pass: the build and tests, and the sanitizer run.
-- The README, the UCI description and the benchmark tables should be updated when the change
-  affects them.
+- The README and the UCI description should be updated when the change affects them.
 
 ## Reporting problems
 

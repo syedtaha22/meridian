@@ -352,7 +352,7 @@ namespace {
 }  // namespace
 
 int main(int argc, char **argv) {
-    const std::string perft_file = argc > 1 ? argv[1] : "bench/positions/perft.txt";
+    const std::string perft_file = argc > 1 ? argv[1] : "tests/data/positions/perft.txt";
 
     test_fen();
     test_attacks();

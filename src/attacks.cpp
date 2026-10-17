@@ -102,8 +102,8 @@ namespace chess {
             return mask;
         }
 
-        // The multipliers of the rook and the bishop on each square, written by
-        // tools/find_magics. `position_test` checks every lookup against walking the rays.
+        // The multipliers of the rook and the bishop on each square, found by a search.
+        // `position_test` checks every lookup against walking the rays.
 #include "magic_numbers.inc"
 
         /**

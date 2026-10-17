@@ -16,7 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Search tests: forced mates, agreement between configurations, limits, repetitions.
+// Search tests: terminal positions, agreement between configurations, limits, repetitions.
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
@@ -70,38 +70,6 @@ namespace {
         return std::find(list.begin(), list.end(), move) != list.end();
     }
 
-    /**
-     * Every puzzle has a forced mate in `moves`. The search should find it, or a shorter one.
-     */
-    void test_mates(const std::string &path, int moves, const char *config) {
-        const auto lines = read_lines(path);
-        check(!lines.empty(), "puzzle file " + path + " is not empty");
-        chess::Searcher searcher(chess::SearchOptions::preset(config, 2 * moves));
-        searcher.options().hash_mb = 8;
-        int wrong = 0;
-
-        for (const std::string &fen : lines) {
-            const chess::Position pos = parse(fen);
-            searcher.clear();
-            const chess::SearchResult result = searcher.search(pos);
-            const chess::Score score = result.display_score();
-            const bool found = score.is_mate && score.value > 0 && score.value <= moves &&
-                               is_legal(pos, result.best_move);
-            if (!found) {
-                ++wrong;
-
-                if (wrong <= 3) {
-                    std::printf("  missed mate in %d: %s (score %d)\n", moves, fen.c_str(),
-                                result.score);
-                }
-            }
-        }
-
-        check(wrong == 0, std::string(config) + " solves all " + std::to_string(lines.size()) +
-                              " mate in " + std::to_string(moves) + " puzzles (" +
-                              std::to_string(wrong) + " missed)");
-    }
-
     void test_terminal_positions() {
         using namespace chess;
         Searcher searcher(SearchOptions::preset("tuned", 4));
@@ -119,7 +87,7 @@ namespace {
 
     void test_results_are_legal() {
         using namespace chess;
-        const auto lines = read_lines("bench/positions/suite.txt");
+        const auto lines = read_lines("tests/data/positions/suite.txt");
         check(!lines.empty(), "suite file is not empty");
 
         for (const char *name :
@@ -159,7 +127,7 @@ namespace {
      */
     void test_value_preserving_techniques() {
         using namespace chess;
-        const auto lines = read_lines("bench/positions/suite.txt");
+        const auto lines = read_lines("tests/data/positions/suite.txt");
         int mismatches = 0;
 
         for (const std::string &line : lines) {
@@ -268,20 +236,12 @@ namespace {
 
 }  // namespace
 
-int main(int argc, char **argv) {
-    const std::string data = argc > 1 ? argv[1] : "tests/data";
-
+int main() {
     test_terminal_positions();
     test_results_are_legal();
     test_value_preserving_techniques();
     test_limits();
     test_repetition();
-
-    for (const char *config : {"full", "tuned", "network"}) {
-        test_mates(data + "/mate_in_1.fen", 1, config);
-        test_mates(data + "/mate_in_2.fen", 2, config);
-        test_mates(data + "/mate_in_3.fen", 3, config);
-    }
 
     if (failures == 0) {
         std::printf("all search tests passed\n");

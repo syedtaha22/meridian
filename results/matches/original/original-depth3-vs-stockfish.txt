@@ -1,7 +1,0 @@
-original engine (depth 3) against UCI engine (100ms per move)
-opponent   games   wins  draws losses    score  illegal   rating from this level
-1320          24      6      6     12   0.375    0/0           1231 (1089 to 1348)
-1500          24      3      2     19   0.167    0/0           1220 (891 to 1356)
-illegal moves are counted as candidate/opponent, per level
-
-Estimated rating: 1227 (95% interval 1114 to 1341) over 48 games

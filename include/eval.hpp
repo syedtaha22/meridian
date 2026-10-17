@@ -57,7 +57,7 @@ namespace chess {
      *
      * Every number has a middlegame and an endgame value, and the result is blended by the
      * material left on the board. `defaults` holds the numbers that `evaluate` uses, which were
-     * tuned on self-play games by `tools/texel_tune`. A term whose numbers are all zero is not
+     * tuned on self-play games. A term whose numbers are all zero is not
      * computed.
      */
     struct EvalParams {

@@ -1,2 +1,0 @@
-tuned (50ms) vs full (50ms)
-games 400: +236 =49 -115  score 0.651  (95% interval 0.608 to 0.695)  Elo +108 (+76 to +143)

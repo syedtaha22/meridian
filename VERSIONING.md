@@ -32,8 +32,7 @@ differently on purpose:
 
 - a new command or a new option
 - a change to the search, the evaluation or the opening book that changes the moves, and that a
-  match accepted under the sequential test described in
-  [results](results/README.md). Each such change is a new step of the results.
+  match accepted under a sequential test.
 
 The patch version returns to 0.
 

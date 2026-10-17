@@ -1,3 +1,0 @@
-network (50ms) vs network+tablebases=0 (50ms)
-games 3000: +1194 =657 -1149  score 0.507  (95% interval 0.492 to 0.523)  Elo +5 (-6 to +16)
-SPRT [+0, +10] Elo, alpha 0.05, beta 0.05: LLR 0.10 (bounds -2.94, 2.94) after 3000 games: no decision

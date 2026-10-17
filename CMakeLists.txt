@@ -76,7 +76,7 @@ add_executable(position_test tests/position_test.cpp)
 target_link_libraries(position_test PRIVATE chess_core)
 target_compile_options(position_test PRIVATE ${WARNING_FLAGS})
 add_test(NAME position_test
-  COMMAND position_test ${CMAKE_SOURCE_DIR}/bench/positions/perft.txt)
+  COMMAND position_test ${CMAKE_SOURCE_DIR}/tests/data/positions/perft.txt)
 
 add_executable(book_test tests/book_test.cpp)
 target_link_libraries(book_test PRIVATE chess_core)
@@ -91,8 +91,7 @@ add_test(NAME stress_test COMMAND stress_test)
 add_executable(search_test tests/search_test.cpp)
 target_link_libraries(search_test PRIVATE chess_core Threads::Threads)
 target_compile_options(search_test PRIVATE ${WARNING_FLAGS})
-add_test(NAME search_test COMMAND search_test ${CMAKE_SOURCE_DIR}/tests/data
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME search_test COMMAND search_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_executable(syzygy_test tests/syzygy_test.cpp)
 target_link_libraries(syzygy_test PRIVATE chess_core)
@@ -103,14 +102,6 @@ add_executable(nnue_test tests/nnue_test.cpp)
 target_link_libraries(nnue_test PRIVATE chess_core)
 target_compile_options(nnue_test PRIVATE ${WARNING_FLAGS})
 add_test(NAME nnue_test COMMAND nnue_test)
-
-# Benchmarks --------------------------------------------------------------
-
-foreach(name bench_rules bench_search bench_eval)
-  add_executable(${name} bench/${name}.cpp)
-  target_link_libraries(${name} PRIVATE chess_core)
-  target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
-endforeach()
 
 # UCI engine --------------------------------------------------------------
 
@@ -154,21 +145,3 @@ add_executable(uci_test tests/uci_test.cpp)
 target_link_libraries(uci_test PRIVATE chess_uci)
 target_compile_options(uci_test PRIVATE ${WARNING_FLAGS})
 add_test(NAME uci_test COMMAND uci_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-add_executable(sprt_test tests/sprt_test.cpp)
-target_compile_options(sprt_test PRIVATE ${WARNING_FLAGS})
-add_test(NAME sprt_test COMMAND sprt_test)
-
-# Tools -------------------------------------------------------------------
-
-foreach(name play_match uci_match mate_check train_policy build_book gen_positions texel_tune train_nnue)
-  add_executable(${name} tools/${name}.cpp)
-  target_link_libraries(${name} PRIVATE chess_core Threads::Threads)
-  target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
-endforeach()
-
-# Finds the magic numbers of src/magic_numbers.inc. It stands alone, so that it can write the file
-# that the library needs to be built.
-add_executable(find_magics tools/find_magics.cpp)
-target_include_directories(find_magics PRIVATE include)
-target_compile_options(find_magics PRIVATE ${WARNING_FLAGS})

@@ -1,2 +1,0 @@
-full (50ms) vs pruning (50ms)
-games 400: +252 =74 -74  score 0.723  (95% interval 0.684 to 0.761)  Elo +166 (+134 to +201)

@@ -158,7 +158,7 @@ namespace chess::nnue {
      * @brief The network that is compiled into the library.
      *
      * @return The network, or null when the build has none. It is the one of
-     *         `src/nnue_net.inc`, which `tools/train_nnue --inc` writes.
+     *         `src/nnue_net.inc`.
      */
     std::shared_ptr<const Network> builtin();
 

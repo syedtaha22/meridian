@@ -1,4 +1,0 @@
-# The refined engine (this repository) against the engine with the network of three self-play
-# rounds, one thread and a table of 16MB each, through the UCI program.
-repository build against pushed, 50 ms, 800 games: games 800: +484 =121 -195  score 0.681  Elo +131 (+106 to +158)
-repository build against pushed, 200 ms, 400 games: games 400: +244 =78 -78  score 0.708  Elo +153 (+117 to +193)

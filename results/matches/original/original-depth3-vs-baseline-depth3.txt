@@ -1,4 +1,0 @@
-original engine (depth 3) (depth 3) against baseline (depth 3)
-opponent   games   wins  draws losses    score  illegal   rating from this level
-preset        24      2      7     15   0.229    0/0   Elo -211 (-381 to -101)
-illegal moves are counted as candidate/opponent, per level

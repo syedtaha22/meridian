@@ -1,7 +1,0 @@
-1353060 training and 338419 held-out positions
-scale k = 1.2470
-8 numbers in groups: material
-start: train 0.097321 held 0.097528
-epoch  1: 6 changed, train 0.097319 held 0.097528
-epoch  2: 6 changed, train 0.097317 held 0.097529
-held-out error 0.097528, written to /home/syedtaha22/Desktop/chess/backend/results/eval-tuning/R2b-retune.params
