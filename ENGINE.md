@@ -91,6 +91,7 @@ below each move and the total.
 | `Threads` | spin, 1 to 64 | 1 | Search threads on one table (Lazy SMP). |
 | `MoveOverhead` | spin, 0 to 5000 | 30 | Milliseconds kept back per move. |
 | `OwnBook` | check | false | Play moves of the opening book while the game is in it. |
+| `Config` | string | network | A search preset with changes, see below. |
 | `EvalFile` | string | empty | A network file, in place of the built-in network. |
 | `SyzygyPath` | string | empty | Directories of Syzygy tables, separated by `:`. |
 | `Ponder` | check | false | Offered so that a chess program may send `go ponder`. |
@@ -190,8 +191,29 @@ in `SearchOptions`, on if it won its match and off otherwise. The presets are `b
 `ordering`, `tt`, `quiescence`, `iterative`, `pruning`, `full`, `tuned` and `network`. Each preset
 is a step of the table in the [README](README.md): `full` is step 08, with the evaluation, margins
 and history that it had, `tuned` is step 09, and `network` is step 10, which is also what
-`SearchOptions` defaults to. `threads=2` (`tuned+threads=2`) lets two threads search one position
-into the shared table.
+`SearchOptions` defaults to.
+
+The `Config` option of the UCI program takes such a name, for example
+`setoption name Config value network+razoring=1`. A name that is not a preset, a change that is
+not a switch or a parameter, and a value that does not fit are refused with a reason in an
+`info string` line, and the earlier configuration stays. The `Threads` option sets the thread count, so
+`Config` does not take `threads`.
+
+The preset names, the switch names and the parameter names are part of the interface from version
+1.0.0. Removing or renaming one needs a new major version, and adding one needs a new minor
+version. A value that a switch or parameter takes keeps its meaning.
+
+## Limits
+
+- Chess960 is not supported, and `UCI_Chess960` is not an option.
+- There is no strength limit: `UCI_LimitStrength` and `UCI_Elo` are not options.
+- `go perft N` runs on the command thread, so `isready`, `stop` and `quit` wait until it ends.
+- Without an increment, a game of 1 minute or less can flag at the default `MoveOverhead`. A
+  value of 100 or more should be used for such games.
+- The `info` lines carry depth, score, nodes, speed, time and the line. They have no `seldepth`,
+  `hashfull` or `multipv`.
+- Scaling was measured up to 8 threads. The `Threads` option accepts up to 64.
+- The tests run on x86-64 only. The release archive for ARM64 is built by the Release workflow.
 
 ## Opening book
 

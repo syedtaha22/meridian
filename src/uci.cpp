@@ -97,9 +97,14 @@ namespace chess::uci {
     }
 
     void Engine::make_searcher() {
-        SearchOptions options = SearchOptions::preset("network", 64);
+        SearchOptions options = SearchOptions::preset(settings_.config, 64);
         options.hash_mb = static_cast<size_t>(settings_.hash_mb);
         options.threads = settings_.threads;
+
+        if (settings_.network) {
+            options.nnue = settings_.network;
+        }
+
         searcher_ = std::make_unique<Searcher>(options);
         searcher_->set_info_callback([this](const IterationInfo &info) {
             std::ostringstream line;
@@ -145,6 +150,9 @@ namespace chess::uci {
                "  MoveOverhead   0 to 5000 ms, default 30\n"
                "  OwnBook        true or false, default false\n"
                "  Ponder         true or false, default false\n"
+               "  Config         a search preset with changes, default network\n"
+               "  EvalFile       a network file, default the built-in network\n"
+               "  SyzygyPath     directories of Syzygy tables, separated by ':'\n"
                "  Clear Hash     forget the transposition table\n";
     }
 
@@ -170,6 +178,7 @@ namespace chess::uci {
         send("option name MoveOverhead type spin default 30 min 0 max 5000");
         send("option name OwnBook type check default false");
         send("option name Ponder type check default false");
+        send("option name Config type string default network");
         send("option name EvalFile type string default <empty>");
         send("option name SyzygyPath type string default <empty>");
         send("option name Clear Hash type button");
@@ -257,12 +266,24 @@ namespace chess::uci {
         } else if (key == "ownbook") {
             const std::string text = lower(value);
             settings_.own_book = text == "true" || text == "1";
+        } else if (key == "config") {
+            const std::string reason = SearchOptions::check_preset(value);
+
+            if (reason.empty()) {
+                settings_.config = value;
+                make_searcher();
+                send("info string Config: " + value);
+            } else {
+                send("info string invalid Config: " + reason);
+            }
         } else if (key == "evalfile") {
             if (value.empty() || value == "<empty>") {
-                searcher_->options().nnue = nnue::builtin();
+                settings_.network = nullptr;
+                make_searcher();
                 send(searcher_->options().nnue ? "info string evaluation: built-in network"
                                                : "info string evaluation: hand written");
             } else if (auto network = nnue::load(value)) {
+                settings_.network = network;
                 searcher_->options().nnue = network;
                 send("info string evaluation: network " + value);
             } else {
@@ -537,7 +558,7 @@ namespace chess::uci {
 
     uint64_t Engine::bench(int depth) {
         finish_search(true);
-        SearchOptions options = SearchOptions::preset("network", std::max(1, depth));
+        SearchOptions options = SearchOptions::preset(settings_.config, std::max(1, depth));
         options.hash_mb = 16;
         Searcher searcher(options);
         uint64_t nodes = 0;

@@ -95,6 +95,8 @@ namespace {
         check(contains(out, "option name OwnBook type check"), "OwnBook is an option");
         check(contains(out, "option name Ponder type check"), "Ponder is an option");
         check(contains(out, "option name SyzygyPath type string"), "SyzygyPath is an option");
+        check(contains(out, "option name Config type string default network"),
+              "Config is an option with the default network");
         check(contains(out, "uciok"), "uciok ends the identity");
         check(contains(out, "readyok"), "isready is answered");
     }
@@ -247,6 +249,81 @@ namespace {
         check(contains(out, "readyok"), "the engine answers after the stop");
     }
 
+    /**
+     * The nodes that `bench 4` reports after the given commands, or an empty string.
+     */
+    std::string bench_nodes(const std::string &setup) {
+        const std::string out = session(setup + "bench 4\nquit\n");
+        const std::regex nodes("Nodes searched  : (\\d+)");
+        std::smatch found;
+        return std::regex_search(out, found, nodes) ? found[1].str() : "";
+    }
+
+    void test_config() {
+        const char *presets[] = {"baseline", "ordering", "tt",    "quiescence", "iterative",
+                                 "pruning",  "full",     "tuned", "network"};
+
+        for (const std::string preset : presets) {
+            const std::string out =
+                session("setoption name Config value " + preset + "\nisready\n");
+            check(contains(out, "info string Config: " + preset + "\n") &&
+                      !contains(out, "invalid Config"),
+                  "Config accepts the preset " + preset);
+        }
+
+        for (const char *change :
+             {"network+razoring=1", "network+razoring", "tuned+see=0", "network+rfp_margin=100",
+              "full+delta_pruning+razoring", "network+futility_base=-5"}) {
+            const std::string out =
+                session(std::string("setoption name Config value ") + change + "\nisready\n");
+            check(!contains(out, "invalid Config"), std::string("Config accepts ") + change);
+        }
+
+        for (const char *bad :
+             {"nonsense", "", "Network", "network+", "network+razorin", "network+rfp_margin",
+              "network+see=2", "network+rfp_margin=x", "network+rfp_margin=", "network+threads=2",
+              "network++see", "network+see=-1"}) {
+            const std::string out =
+                session(std::string("setoption name Config value ") + bad + "\nisready\n");
+            check(contains(out, "info string invalid Config: "),
+                  std::string("Config refuses '") + bad + "'");
+            check(!contains(out, "info string Config: "),
+                  std::string("Config does not apply '") + bad + "'");
+        }
+
+        const std::string network = bench_nodes("");
+        const std::string baseline = bench_nodes("setoption name Config value baseline\n");
+        check(!network.empty() && !baseline.empty(), "bench runs under both configurations");
+        check(network != baseline, "the configurations search different numbers of nodes");
+        check(baseline == bench_nodes("setoption name Config value baseline\n"),
+              "a configuration gives the same nodes twice");
+
+        // A refused Config leaves the one before it.
+        check(baseline == bench_nodes("setoption name Config value baseline\n"
+                                      "setoption name Config value network+razorin\n"),
+              "a refused Config keeps the previous one");
+        // A change after the name is applied on top of it.
+        check(bench_nodes("setoption name Config value network+null_move=0\n") != network,
+              "a switch changes the search");
+        // A later Config replaces an earlier one, and Hash and Threads survive it.
+        check(network == bench_nodes("setoption name Config value baseline\n"
+                                     "setoption name Config value network\n"),
+              "a later Config replaces an earlier one");
+
+        const std::string kept =
+            session("setoption name Hash value 32\nsetoption name Threads value 2\n"
+                    "setoption name Config value pruning\nucinewgame\nposition startpos\n"
+                    "go depth 6\n");
+        check(count(kept, "bestmove ") == 1 && !best_move(kept).empty(),
+              "a search answers after Config follows Hash and Threads");
+
+        // The hand written evaluation of an early preset stays when the network is cleared.
+        const std::string cleared = session("setoption name Config value baseline\n"
+                                            "setoption name EvalFile value <empty>\n");
+        check(contains(cleared, "info string evaluation: hand written"),
+              "an early preset keeps the hand written evaluation");
+    }
+
     void test_bench() {
         std::string first = session("bench 5\nquit\n");
         std::string second = session("bench 5\nquit\n");
@@ -272,6 +349,7 @@ int main() {
     test_bad_input();
     test_stop();
     test_bench();
+    test_config();
     test_help();
     test_perft();
     test_search_moves();

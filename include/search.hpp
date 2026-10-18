@@ -154,9 +154,23 @@ namespace chess {
          *
          * @param name Preset name, with its changes.
          * @param max_depth Nominal depth in plies.
-         * @return The options, or the network configuration for an unknown name.
+         * @return The options. A name that is not a preset gives the options of "full", and a
+         *         change that is not a switch or a parameter is ignored. `check_preset` finds both.
          */
         static SearchOptions preset(std::string_view name, int max_depth);
+
+        /**
+         * @brief Checks a preset name with its changes, without building the options.
+         *
+         * The preset must be one of the names of `preset`. A change must name a switch, which
+         * takes `+name`, `+name=0` or `+name=1`, or a parameter, which takes `+name=value` with
+         * a whole number. The parameter `threads` is refused, because the UCI option `Threads`
+         * sets it.
+         *
+         * @param name Preset name, with its changes.
+         * @return An empty string when `name` is valid, and the reason it is not otherwise.
+         */
+        static std::string check_preset(std::string_view name);
     };
 
     /**

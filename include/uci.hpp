@@ -86,6 +86,9 @@ namespace chess::uci {
             int threads = 1;
             int move_overhead_ms = 30;
             bool own_book = false;
+            std::string config =
+                "network";  ///< A preset with changes, see `SearchOptions::preset`.
+            std::shared_ptr<const nnue::Network> network;  ///< From `EvalFile`, or null.
         };
 
         struct GoCommand {

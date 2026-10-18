@@ -234,6 +234,29 @@ namespace {
         check(is_legal(walk, result.best_move), "a move is found with repetitions in the history");
     }
 
+    void test_preset_names() {
+        using chess::SearchOptions;
+
+        for (const char *name :
+             {"baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full", "tuned",
+              "network", "network+razoring=1", "tuned+rfp_margin=100+see=0"}) {
+            check(SearchOptions::check_preset(name).empty(), std::string("accepted: ") + name);
+        }
+
+        for (const char *name : {"", "nonsense", "network+razorin", "network+",
+                                 "network+rfp_margin", "network+see=2", "network+threads=4"}) {
+            check(!SearchOptions::check_preset(name).empty(), std::string("refused: ") + name);
+        }
+
+        check(SearchOptions::check_preset("nonsense").find("network") != std::string::npos,
+              "the reason lists the presets");
+
+        const SearchOptions plain = SearchOptions::preset("network", 6);
+        const SearchOptions changed = SearchOptions::preset("network+razoring=1+rfp_margin=77", 6);
+        check(!plain.razoring && changed.razoring, "a switch is applied");
+        check(changed.rfp_margin == 77, "a parameter is applied");
+    }
+
 }  // namespace
 
 int main() {
@@ -242,6 +265,7 @@ int main() {
     test_value_preserving_techniques();
     test_limits();
     test_repetition();
+    test_preset_names();
 
     if (failures == 0) {
         std::printf("all search tests passed\n");

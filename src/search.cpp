@@ -23,6 +23,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -237,6 +239,76 @@ namespace chess {
         }
 
     }  // namespace
+
+    std::string SearchOptions::check_preset(std::string_view name) {
+        constexpr std::string_view kPresets[] = {"baseline", "ordering",   "iterative",
+                                                 "tt",       "quiescence", "pruning",
+                                                 "full",     "tuned",      "network"};
+        const size_t first_plus = name.find('+');
+        const std::string_view base = name.substr(0, first_plus);
+
+        if (std::find(std::begin(kPresets), std::end(kPresets), base) == std::end(kPresets)) {
+            std::string reason = "unknown preset '" + std::string(base) + "', the presets are";
+
+            for (const std::string_view preset_name : kPresets) {
+                reason += " " + std::string(preset_name);
+            }
+            return reason;
+        }
+
+        for (size_t at = first_plus; at != std::string_view::npos;) {
+            const size_t next = name.find('+', at + 1);
+            const std::string_view change =
+                name.substr(at + 1, next == std::string_view::npos ? next : next - at - 1);
+            at = next;
+
+            if (change.empty()) {
+                return "an empty change after '+'";
+            }
+
+            const size_t equals = change.find('=');
+            const std::string_view key = change.substr(0, equals);
+            const Field *field = nullptr;
+
+            for (const Field &candidate : kFields) {
+                if (key == candidate.name) {
+                    field = &candidate;
+                }
+            }
+
+            if (field == nullptr) {
+                return "unknown switch or parameter '" + std::string(key) + "'";
+            }
+            if (key == "threads") {
+                return "the parameter 'threads' is set by the option Threads";
+            }
+
+            if (equals == std::string_view::npos) {
+                if (field->flag == nullptr) {
+                    return "the parameter '" + std::string(key) + "' needs a value";
+                }
+                continue;
+            }
+
+            const std::string_view value = change.substr(equals + 1);
+            const size_t digits_from = !value.empty() && value[0] == '-' ? 1 : 0;
+            const bool whole =
+                value.size() > digits_from &&
+                std::all_of(value.begin() + static_cast<std::ptrdiff_t>(digits_from), value.end(),
+                            [](char c) { return c >= '0' && c <= '9'; });
+
+            if (!whole) {
+                return "'" + std::string(key) + "' needs a whole number, not '" +
+                       std::string(value) + "'";
+            }
+            if (field->flag != nullptr && value != "0" && value != "1") {
+                return "the switch '" + std::string(key) + "' takes 0 or 1, not '" +
+                       std::string(value) + "'";
+            }
+        }
+
+        return "";
+    }
 
     SearchOptions SearchOptions::preset(std::string_view name, int max_depth) {
         // The options default to the engine of step 10. The steps before it have the evaluation,
