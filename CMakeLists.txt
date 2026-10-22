@@ -39,6 +39,7 @@ add_library(chess_core STATIC
   src/attacks.cpp
   src/book.cpp
   src/eval.cpp
+  src/experience.cpp
   src/movegen.cpp
   src/nnue.cpp
   src/nnue_builtin.cpp

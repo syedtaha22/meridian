@@ -19,6 +19,8 @@
 // UCI tests: scripted sessions through the engine, with the replies checked.
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 
 // GCC 12 reports a false -Wmaybe-uninitialized from inside <regex> in the sanitizer build.
 #if defined(__GNUC__) && !defined(__clang__)
@@ -32,6 +34,7 @@
 
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "movegen.hpp"
 #include "uci.hpp"
@@ -97,6 +100,8 @@ namespace {
         check(contains(out, "option name SyzygyPath type string"), "SyzygyPath is an option");
         check(contains(out, "option name Config type string default network"),
               "Config is an option with the default network");
+        check(contains(out, "option name ExperienceFile type string"),
+              "ExperienceFile is an option");
         check(contains(out, "uciok"), "uciok ends the identity");
         check(contains(out, "readyok"), "isready is answered");
     }
@@ -324,6 +329,85 @@ namespace {
               "an early preset keeps the hand written evaluation");
     }
 
+    struct ExperienceRow {
+        uint64_t key;
+        uint16_t move;
+        int16_t score;
+        uint16_t depth;
+    };
+
+    std::string write_experience(const std::string &name, const std::vector<ExperienceRow> &rows) {
+        const std::string path = (std::filesystem::temp_directory_path() / name).string();
+        std::ofstream out(path, std::ios::binary);
+        const uint64_t count = rows.size();
+        out.write("MRDEXP01", 8);
+        out.write(reinterpret_cast<const char *>(&count), 8);
+
+        for (const ExperienceRow &row : rows) {
+            out.write(reinterpret_cast<const char *>(&row.key), 8);
+            out.write(reinterpret_cast<const char *>(&row.move), 2);
+            out.write(reinterpret_cast<const char *>(&row.score), 2);
+            out.write(reinterpret_cast<const char *>(&row.depth), 2);
+        }
+
+        return path;
+    }
+
+    void test_experience() {
+        chess::Position start;
+        const chess::Move odd = chess::move_from_uci(start, "a2a3");
+        const std::string deep =
+            write_experience("meridian_experience_deep.bin", {{start.key(), odd.data, 25, 99}});
+        const std::string shallow =
+            write_experience("meridian_experience_shallow.bin", {{start.key(), odd.data, 25, 1}});
+        const std::string unordered =
+            write_experience("meridian_experience_unordered.bin",
+                             {{start.key() + 1, odd.data, 0, 9}, {start.key(), odd.data, 0, 9}});
+
+        const std::string none = session("position startpos\ngo depth 4\n");
+        check(!contains(none, "experience move"), "no experience is used by default");
+
+        const std::string used = session("setoption name ExperienceFile value " + deep +
+                                         "\nposition startpos\ngo depth 4\n");
+        check(contains(used, "info string experience: 1 positions from"),
+              "the experience file is reported when it loads");
+        check(contains(used, "info string experience move") && best_move(used) == "a2a3",
+              "a deeper analysis decides the move");
+
+        const std::string search_deeper = session("setoption name ExperienceFile value " + shallow +
+                                                  "\nposition startpos\ngo depth 4\n");
+        check(!contains(search_deeper, "experience move"),
+              "a search that is as deep as the analysis keeps its own move");
+
+        const std::string moved = session("setoption name ExperienceFile value " + deep +
+                                          "\nposition startpos moves e2e4\ngo depth 4\n");
+        check(!contains(moved, "experience move"),
+              "a position that is not in the file is searched");
+
+        const std::string cleared = session("setoption name ExperienceFile value " + deep +
+                                            "\nsetoption name ExperienceFile value <empty>\n"
+                                            "position startpos\ngo depth 4\n");
+        check(contains(cleared, "info string experience: none") &&
+                  !contains(cleared, "experience move"),
+              "an empty value switches the experience off");
+
+        const std::string kept = session("setoption name ExperienceFile value " + deep +
+                                         "\nsetoption name Config value network\n"
+                                         "position startpos\ngo depth 4\n");
+        check(contains(kept, "info string experience move"), "a new Config keeps the experience");
+
+        const std::string missing = session("setoption name ExperienceFile value /no/such/file\n");
+        check(contains(missing, "cannot read an experience file"), "a missing file is refused");
+
+        const std::string bad = session("setoption name ExperienceFile value " + unordered + "\n");
+        check(contains(bad, "cannot read an experience file"),
+              "a file with keys out of order is refused");
+
+        for (const std::string &path : {deep, shallow, unordered}) {
+            std::filesystem::remove(path);
+        }
+    }
+
     void test_bench() {
         std::string first = session("bench 5\nquit\n");
         std::string second = session("bench 5\nquit\n");
@@ -349,6 +433,7 @@ int main() {
     test_bad_input();
     test_stop();
     test_bench();
+    test_experience();
     test_config();
     test_help();
     test_perft();

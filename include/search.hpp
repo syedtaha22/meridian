@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "eval.hpp"
+#include "experience.hpp"
 #include "nnue.hpp"
 #include "position.hpp"
 #include "tt.hpp"
@@ -141,6 +142,12 @@ namespace chess {
         std::shared_ptr<const nnue::Network> nnue = nnue::builtin();
 
         /**
+         * Results of earlier analyses, or null. When the root position is in them with a depth
+         * above the depth that the search completed, the move of the analysis is played.
+         */
+        std::shared_ptr<const Experience> experience;
+
+        /**
          * @brief A named configuration, from the plain search to the full one.
          *
          * Names: "baseline", "ordering", "tt", "quiescence", "iterative", "pruning", "full"
@@ -206,8 +213,9 @@ namespace chess {
         int score = 0;   ///< Centipawns for the side to move; mates near kMateScore.
         int depth = 0;   ///< Deepest fully completed iteration.
         double elapsed_ms = 0;
-        bool stopped = false;  ///< A limit or `stop()` ended the search early.
-        std::vector<Move> pv;  ///< Best line, starting with `best_move`.
+        bool stopped = false;          ///< A limit or `stop()` ended the search early.
+        bool from_experience = false;  ///< The move is the one of an earlier, deeper analysis.
+        std::vector<Move> pv;          ///< Best line, starting with `best_move`.
         SearchStats stats;
 
         /**

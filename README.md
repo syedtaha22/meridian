@@ -249,8 +249,8 @@ build/meridian bench         # nodes searched and speed on the built-in position
 build/meridian help          # the commands and the options
 ```
 
-The options are `Hash`, `Threads`, `MoveOverhead`, `OwnBook`, `Ponder`, `Config`, `EvalFile` and
-`SyzygyPath`.
+The options are `Hash`, `Threads`, `MoveOverhead`, `OwnBook`, `Ponder`, `Config`, `EvalFile`,
+`ExperienceFile` and `SyzygyPath`.
 
 The commands, the options and the time management are in [ENGINE.md](ENGINE.md).
 

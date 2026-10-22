@@ -791,6 +791,24 @@ namespace chess {
             }
         }
 
+        // An analysis that went deeper than this search decides the move.
+        if (options_.experience != nullptr && helper_id_ == 0) {
+            const ExperienceEntry *entry = options_.experience->find(root.key());
+
+            if (entry != nullptr && entry->depth > result.depth) {
+                const auto known = std::find_if(legal.begin(), legal.end(), [&](Move move) {
+                    return move.data == entry->move;
+                });
+
+                if (known != legal.end()) {
+                    result.best_move = *known;
+                    result.score = entry->score;
+                    result.from_experience = true;
+                    result.pv.assign(1, *known);
+                }
+            }
+        }
+
         result.stopped = aborted_;
         result.stats = stats_;
         result.elapsed_ms = (now_ns() - start_ns_) / 1e6;

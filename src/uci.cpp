@@ -105,6 +105,8 @@ namespace chess::uci {
             options.nnue = settings_.network;
         }
 
+        options.experience = settings_.experience;
+
         searcher_ = std::make_unique<Searcher>(options);
         searcher_->set_info_callback([this](const IterationInfo &info) {
             std::ostringstream line;
@@ -152,6 +154,7 @@ namespace chess::uci {
                "  Ponder         true or false, default false\n"
                "  Config         a search preset with changes, default network\n"
                "  EvalFile       a network file, default the built-in network\n"
+               "  ExperienceFile a file of analysed positions, default none\n"
                "  SyzygyPath     directories of Syzygy tables, separated by ':'\n"
                "  Clear Hash     forget the transposition table\n";
     }
@@ -180,6 +183,7 @@ namespace chess::uci {
         send("option name Ponder type check default false");
         send("option name Config type string default network");
         send("option name EvalFile type string default <empty>");
+        send("option name ExperienceFile type string default <empty>");
         send("option name SyzygyPath type string default <empty>");
         send("option name Clear Hash type button");
         send("uciok");
@@ -288,6 +292,19 @@ namespace chess::uci {
                 send("info string evaluation: network " + value);
             } else {
                 send("info string cannot read a network from " + value);
+            }
+        } else if (key == "experiencefile") {
+            if (value.empty() || value == "<empty>") {
+                settings_.experience = nullptr;
+                searcher_->options().experience = nullptr;
+                send("info string experience: none");
+            } else if (auto experience = Experience::load(value)) {
+                settings_.experience = experience;
+                searcher_->options().experience = experience;
+                send("info string experience: " + std::to_string(experience->size()) +
+                     " positions from " + value);
+            } else {
+                send("info string cannot read an experience file from " + value);
             }
         } else if (key == "syzygypath") {
             const bool found = value != "<empty>" && syzygy::init(value);
@@ -516,6 +533,10 @@ namespace chess::uci {
             if (infinite) {
                 std::unique_lock<std::mutex> lock(wait_lock_);
                 wait_.wait(lock, [this] { return stop_requested_.load(); });
+            }
+
+            if (result.from_experience && !quiet_.load()) {
+                send("info string experience move");
             }
 
             std::string reply =

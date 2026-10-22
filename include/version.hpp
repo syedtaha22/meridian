@@ -23,6 +23,6 @@ namespace chess {
     /**
      * The version of the engine, as the UCI `id name` line reports it.
      */
-    constexpr const char *kEngineVersion = "1.0.0";
+    constexpr const char *kEngineVersion = "1.1.0";
 
 }  // namespace chess

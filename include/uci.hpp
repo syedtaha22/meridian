@@ -89,6 +89,7 @@ namespace chess::uci {
             std::string config =
                 "network";  ///< A preset with changes, see `SearchOptions::preset`.
             std::shared_ptr<const nnue::Network> network;  ///< From `EvalFile`, or null.
+            std::shared_ptr<const Experience> experience;  ///< From `ExperienceFile`, or null.
         };
 
         struct GoCommand {

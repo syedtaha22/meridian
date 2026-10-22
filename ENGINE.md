@@ -17,6 +17,7 @@ This page describes the code: the engine, the UCI program and the tests. The
 │   ├── eval.hpp                 # the evaluation and its tunable numbers
 │   ├── see.hpp                  # static exchange evaluation of a capture
 │   ├── book.hpp                 # the opening book, looked up by position
+│   ├── experience.hpp           # analysed positions that are read from a file
 │   ├── policy.hpp               # move features and the learned policy score
 │   ├── tt.hpp                   # transposition table, lockless, shared by threads
 │   ├── timeman.hpp              # the budget of one move from the clock of a game
@@ -93,6 +94,7 @@ below each move and the total.
 | `OwnBook` | check | false | Play moves of the opening book while the game is in it. |
 | `Config` | string | network | A search preset with changes, see below. |
 | `EvalFile` | string | empty | A network file, in place of the built-in network. |
+| `ExperienceFile` | string | empty | A file of analysed positions, see Experience file. |
 | `SyzygyPath` | string | empty | Directories of Syzygy tables, separated by `:`. |
 | `Ponder` | check | false | Offered so that a chess program may send `go ponder`. |
 | `Clear Hash` | button | | Forget the table. |
@@ -227,3 +229,19 @@ book has one to several moves.
 
 A move of the book is chosen at random with a weight that falls with its score gap, so a move
 15cp worse than the best has about a third of its weight.
+
+## Experience file
+
+The option `ExperienceFile` names a file of positions that were analysed earlier, deeper than a
+game search can go. When the position to move in is in the file and the depth of its analysis is
+above the depth that the search completed, the engine plays the move of the analysis and reports
+`info string experience move`. A search that reaches the depth of the analysis keeps its own move.
+Without the option, or with an empty value, the engine does not read experience and its searches
+do not change.
+
+The file has a header of 16 bytes: the text `MRDEXP01` and the number of entries as a 64-bit
+integer. The entries follow in order of their keys, each one 14 bytes: the position hash
+(`Position::key`, 64 bits), the best move (`Move::data`, 16 bits), the score for the side to move
+(16 bits, mates near 30000) and the depth of the analysis (16 bits). Numbers are little-endian.
+The engine reads the file and never writes it. It refuses a file with a wrong size, with another
+header, or whose keys are not in strictly increasing order, and keeps the previous experience.
