@@ -18,6 +18,9 @@
 
 #include "nnue.hpp"
 
+#include <cstddef>
+#include <iterator>
+
 #if __has_include("nnue_net.inc")
 #define CHESS_HAS_BUILTIN_NETWORK 1
 #endif
@@ -33,7 +36,13 @@ namespace chess::nnue {
     }  // namespace
 
     std::shared_ptr<const Network> builtin() {
-        static const std::shared_ptr<const Network> network = [] {
+        static const std::shared_ptr<const Network> network =
+            []() -> std::shared_ptr<const Network> {
+            // A build with another width (CHESS_NNUE_HIDDEN) cannot hold this network.
+            if (std::size(kBuiltinFeatureBias) != static_cast<size_t>(kHidden)) {
+                return nullptr;
+            }
+
             auto net = std::make_shared<Network>();
 
             for (int i = 0; i < kInputs; ++i) {
