@@ -72,17 +72,17 @@ namespace chess {
         // Techniques that were tested by a match. The ones that helped are on by default, and the
         // others stay as switches with their results recorded.
         bool see = true;                   ///< Skip losing captures in quiescence by exchange.
-        bool delta_pruning = false;        ///< Skip captures that cannot reach alpha.
+        bool delta_pruning = true;         ///< Skip captures that cannot reach alpha.
         bool losing_captures_late = true;  ///< Try captures that lose material after quiet moves.
         bool reverse_futility = true;    ///< Return early when the static score is far above beta.
         bool futility = true;            ///< Skip quiet moves near the leaves that cannot help.
         bool razoring = false;           ///< Go to quiescence when the static score is far low.
-        bool late_move_pruning = false;  ///< Skip late quiet moves at shallow depth.
+        bool late_move_pruning = true;   ///< Skip late quiet moves at shallow depth.
         bool lmr_table = true;           ///< Reduce late moves by a logarithmic table.
-        bool iir = false;                ///< Reduce a deep node that has no table move.
+        bool iir = true;                 ///< Reduce a deep node that has no table move.
         bool null_margin = true;         ///< Reduce more in the null move at a large margin.
         bool aspiration = true;          ///< Search each pass in a window around the last.
-        bool singular = false;           ///< Extend a table move that is better than the rest.
+        bool singular = true;            ///< Extend a table move that is better than the rest.
         bool counter_history = true;     ///< Order quiet moves by the move before them.
         bool tt_buckets = false;         ///< Two slots to a table bucket.
 
@@ -105,29 +105,29 @@ namespace chess {
         bool probcut = true;                 ///< Prove a node by a shallow search of captures.
 
         // Parameters of the techniques above, in centipawns unless stated otherwise.
-        int rfp_margin = 54;     ///< Reverse futility margin per ply.
-        int futility_base = 55;  ///< Futility margin at depth 1, plus `futility_step` each ply.
-        int futility_step = 218;
+        int rfp_margin = 52;     ///< Reverse futility margin per ply.
+        int futility_base = 25;  ///< Futility margin at depth 1, plus `futility_step` each ply.
+        int futility_step = 177;
         int razor_base = 350;  ///< Razoring margin at depth 1, plus `razor_step` each ply.
         int razor_step = 150;
-        int delta_margin = 200;        ///< Value added to a victim in delta pruning.
-        int lmp_base = 3;              ///< Late move pruning count: base + depth squared.
-        int lmr_scale = 225;           ///< Divisor of the reduction table, in hundredths.
-        int iir_depth = 6;             ///< Smallest depth of the internal iterative reduction.
-        int null_margin_step = 271;    ///< Margin over beta that adds one ply to the null move.
-        int aspiration_delta = 24;     ///< Half width of the first aspiration window.
-        int singular_depth = 8;        ///< Smallest depth of a singular extension search.
-        int probcut_margin = 200;      ///< Margin over beta of the probcut search.
+        int delta_margin = 136;        ///< Value added to a victim in delta pruning.
+        int lmp_base = 5;              ///< Late move pruning count: base + depth squared.
+        int lmr_scale = 194;           ///< Divisor of the reduction table, in hundredths.
+        int iir_depth = 3;             ///< Smallest depth of the internal iterative reduction.
+        int null_margin_step = 446;    ///< Margin over beta that adds one ply to the null move.
+        int aspiration_delta = 28;     ///< Half width of the first aspiration window.
+        int singular_depth = 6;        ///< Smallest depth of a singular extension search.
+        int probcut_margin = 183;      ///< Margin over beta of the probcut search.
         int correction_limit = 16384;  ///< Largest correction, in 1/256 of a centipawn.
         int threads = 1;               ///< Search threads that share the table.
         std::vector<Move> root_moves;  ///< The moves the root is limited to; empty means all.
         int policy_scale = 16;         ///< Ordering score of one logit of the policy, in 1/64.
         int killer_count = 2;          ///< Killer moves kept for each ply, 1 or 2.
-        int mvv_scale = 16;            ///< Ordering weight of the victim against the attacker.
-        int bad_capture_margin = 0;    ///< A capture is late when its exchange is below minus this.
+        int mvv_scale = 13;            ///< Ordering weight of the victim against the attacker.
+        int bad_capture_margin = 15;   ///< A capture is late when its exchange is below minus this.
         int history_limit = 16384;     ///< Largest history score.
-        int history_bonus = 8;         ///< History change of a cutoff, per ply squared.
-        int malus_percent = 50;        ///< Malus of a failed move, in percent of the bonus.
+        int history_bonus = 15;        ///< History change of a cutoff, per ply squared.
+        int malus_percent = 90;        ///< Malus of a failed move, in percent of the bonus.
         int continuation_limit = 16000;  ///< Largest continuation score.
 
         /**

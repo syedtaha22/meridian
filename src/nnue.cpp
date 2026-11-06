@@ -22,6 +22,10 @@
 #include <cstring>
 #include <fstream>
 
+#if defined(__x86_64__) && defined(__GNUC__)
+#include <immintrin.h>
+#endif
+
 // On x86-64, the functions that add and sum rows of weights are compiled twice, once for AVX2 and
 // once for the base instruction set, and the program picks one when it starts.
 #if defined(__x86_64__) && defined(__GNUC__) && !defined(__clang__)
@@ -36,7 +40,60 @@ namespace chess::nnue {
 
     namespace {
 
+        // The magic of a file gives the activation: the 3 clips the values, the 4 also squares
+        // them.
         constexpr char kMagic[8] = {'M', 'R', 'D', 'N', 'N', 'U', 'E', '3'};
+        constexpr char kMagicSquared[8] = {'M', 'R', 'D', 'N', 'N', 'U', 'E', '4'};
+
+        constexpr int kSquareShift = 6;  ///< A squared value is divided by 2^6.
+        constexpr int kSquaredScale = (kQuantInput * kQuantInput) >> kSquareShift;
+
+        /**
+         * The sum of the squares of the clipped values, divided by 2^6, times the weights.
+         */
+        int32_t dot_squared(const int16_t *x, const int16_t *w) {
+            int32_t sum = 0;
+
+            for (int i = 0; i < kHidden; ++i) {
+                const int32_t a = std::clamp<int32_t>(x[i], 0, kQuantInput);
+                sum += ((a * a) >> kSquareShift) * w[i];
+            }
+
+            return sum;
+        }
+
+#if defined(__x86_64__) && defined(__GNUC__)
+
+        /**
+         * The same sum 16 values at a time. A square of a value up to 255 fits 16 bits without a
+         * sign, so the product is a 16-bit multiply, a logical shift and a multiply-add into
+         * 32-bit lanes.
+         */
+        __attribute__((target("avx2"))) int32_t dot_squared_avx2(const int16_t *x,
+                                                                 const int16_t *w) {
+            const __m256i zero = _mm256_setzero_si256();
+            const __m256i top = _mm256_set1_epi16(kQuantInput);
+            __m256i acc = zero;
+
+            for (int i = 0; i < kHidden; i += 16) {
+                __m256i a = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(x + i));
+                a = _mm256_min_epi16(_mm256_max_epi16(a, zero), top);
+                const __m256i square = _mm256_srli_epi16(_mm256_mullo_epi16(a, a), kSquareShift);
+                const __m256i weights =
+                    _mm256_loadu_si256(reinterpret_cast<const __m256i *>(w + i));
+                acc = _mm256_add_epi32(acc, _mm256_madd_epi16(square, weights));
+            }
+
+            __m128i half =
+                _mm_add_epi32(_mm256_castsi256_si128(acc), _mm256_extracti128_si256(acc, 1));
+            half = _mm_add_epi32(half, _mm_shuffle_epi32(half, 0x4E));
+            half = _mm_add_epi32(half, _mm_shuffle_epi32(half, 0xB1));
+            return _mm_cvtsi128_si32(half);
+        }
+
+        const bool kHasAvx2 = __builtin_cpu_supports("avx2") && kHidden % 16 == 0;
+
+#endif
 
         CHESS_INLINE void add_row(int16_t *values, const int16_t *row) {
             for (int i = 0; i < kHidden; ++i) {
@@ -148,6 +205,23 @@ namespace chess::nnue {
         const int bucket = bucket_of(acc.count);
         int32_t sum = network.output_bias[bucket];
 
+        if (network.squared) {
+#if defined(__x86_64__) && defined(__GNUC__)
+            if (kHasAvx2) {
+                sum += dot_squared_avx2(us, network.output_weights[bucket][0]) +
+                       dot_squared_avx2(them, network.output_weights[bucket][1]);
+            } else
+#endif
+            {
+                sum += dot_squared(us, network.output_weights[bucket][0]) +
+                       dot_squared(them, network.output_weights[bucket][1]);
+            }
+
+            // sum is the output in units of 1 / (kSquaredScale * kQuantOutput).
+            return static_cast<int>(static_cast<int64_t>(sum) * kOutputScale /
+                                    (kSquaredScale * kQuantOutput));
+        }
+
         for (int i = 0; i < kHidden; ++i) {
             const int32_t a = std::clamp<int32_t>(us[i], 0, kQuantInput);
             const int32_t b = std::clamp<int32_t>(them[i], 0, kQuantInput);
@@ -169,7 +243,7 @@ namespace chess::nnue {
 
         const int32_t header[6] = {kInputs,      kHidden,      kQuantInput,
                                    kQuantOutput, kOutputScale, kBuckets};
-        out.write(kMagic, sizeof(kMagic));
+        out.write(network.squared ? kMagicSquared : kMagic, sizeof(kMagic));
         out.write(reinterpret_cast<const char *>(header), sizeof(header));
         out.write(reinterpret_cast<const char *>(network.feature_weights),
                   sizeof(network.feature_weights));
@@ -197,12 +271,15 @@ namespace chess::nnue {
         const int32_t expected[6] = {kInputs,      kHidden,      kQuantInput,
                                      kQuantOutput, kOutputScale, kBuckets};
 
-        if (!in || std::memcmp(magic, kMagic, sizeof(kMagic)) != 0 ||
+        const bool squared = in && std::memcmp(magic, kMagicSquared, sizeof(kMagic)) == 0;
+
+        if (!in || (!squared && std::memcmp(magic, kMagic, sizeof(kMagic)) != 0) ||
             std::memcmp(header, expected, sizeof(header)) != 0) {
             return nullptr;
         }
 
         auto network = std::make_shared<Network>();
+        network->squared = squared;
         in.read(reinterpret_cast<char *>(network->feature_weights),
                 sizeof(network->feature_weights));
         in.read(reinterpret_cast<char *>(network->feature_bias), sizeof(network->feature_bias));

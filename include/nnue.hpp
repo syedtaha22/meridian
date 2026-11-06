@@ -57,12 +57,16 @@ namespace chess::nnue {
      * One layer maps the pieces of the board to `kHidden` values for each side, which are clipped
      * to [0, kQuantInput] and combined by an output layer into one score. The side to move comes
      * first, and the number of pieces on the board chooses the output layer.
+     *
+     * With `squared` set, the clipped values are squared and divided by 2^6 before the output
+     * layer, so the output layer sees `kQuantInput * kQuantInput / 64` where it saw `kQuantInput`.
      */
     struct Network {
         alignas(32) int16_t feature_weights[kInputs][kHidden];
         alignas(32) int16_t feature_bias[kHidden];
         alignas(32) int16_t output_weights[kBuckets][2][kHidden];
         int32_t output_bias[kBuckets] = {};
+        bool squared = false;
     };
 
     /**

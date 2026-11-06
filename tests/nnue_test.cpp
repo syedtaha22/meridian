@@ -19,6 +19,7 @@
 // Network tests: the accumulator that follows a game equals the one computed from the board, also
 // when a king changes its bucket or the mirror, the evaluation is the same from both sides, the
 // output layer follows the number of pieces, and a saved network loads back.
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <random>
@@ -296,6 +297,50 @@ namespace {
         std::remove(path.c_str());
     }
 
+    void test_squared() {
+        // A squared network scores a position by the squares of the clipped values, divided by
+        // 2^6, and its file keeps that after a round trip.
+        chess::nnue::Network net = random_network(11);
+        net.squared = true;
+        const auto pos = chess::Position::from_fen(
+            "r1bq1rk1/ppp2ppp/2n2n2/3pp3/1bP5/2NP1NP1/PP2PPBP/R1BQ1RK1 w - - 0 1");
+        chess::nnue::Accumulator acc;
+        chess::nnue::refresh(net, *pos, acc);
+
+        const int bucket = chess::nnue::bucket_of(acc.count);
+        int64_t sum = net.output_bias[bucket];
+
+        for (int side = 0; side < 2; ++side) {
+            const int16_t *values = acc.values[side == 0 ? chess::kWhite : chess::kBlack];
+
+            for (int i = 0; i < chess::nnue::kHidden; ++i) {
+                const int a = std::clamp<int>(values[i], 0, chess::nnue::kQuantInput);
+                sum += static_cast<int64_t>((a * a) >> 6) * net.output_weights[bucket][side][i];
+            }
+        }
+
+        const int scale = (chess::nnue::kQuantInput * chess::nnue::kQuantInput) >> 6;
+        check(chess::nnue::evaluate(net, acc, chess::kWhite) ==
+                  static_cast<int>(sum * chess::nnue::kOutputScale /
+                                   (scale * chess::nnue::kQuantOutput)),
+              "a squared network follows the formula");
+
+        const std::string path = "/tmp/meridian_nnue_squared_test.nnue";
+        check(chess::nnue::save(net, path), "a squared network is written");
+        const auto loaded = chess::nnue::load(path);
+        check(loaded != nullptr && loaded->squared, "a squared network is read as squared");
+        std::remove(path.c_str());
+
+        chess::nnue::Network plain = random_network(11);
+        check(chess::nnue::save(plain, path), "a clipped network is written");
+        const auto reloaded = chess::nnue::load(path);
+        check(reloaded != nullptr && !reloaded->squared, "a clipped network is read as clipped");
+        std::remove(path.c_str());
+
+        const auto builtin = chess::nnue::builtin();
+        check(builtin != nullptr && builtin->squared, "the built-in network is squared");
+    }
+
     void test_search() {
         // A search with a network uses the accumulators along the line, and gives the same
         // result as a search that refreshes them: here, that it returns legal moves and that
@@ -333,6 +378,7 @@ int main() {
     test_king_moves();
     test_symmetry();
     test_io();
+    test_squared();
     test_search();
 
     if (failures == 0) {

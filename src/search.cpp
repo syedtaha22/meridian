@@ -347,6 +347,13 @@ namespace chess {
         o.lmr_table = false;
         o.correction_history = false;
         o.probcut = false;
+        o.delta_pruning = false;
+        o.late_move_pruning = false;
+        o.iir = false;
+        o.singular = false;
+        o.lmr_scale = 225;
+        o.mvv_scale = 16;
+        o.bad_capture_margin = 0;
 
         // The changes after the name are applied last, on whatever the name gave.
         const size_t plus = name.find('+');
@@ -425,7 +432,7 @@ namespace chess {
             o.aspiration_delta = 18;
             o.history_gravity = current.history_gravity;
             o.history_limit = current.history_limit;
-            o.history_bonus = current.history_bonus;
+            o.history_bonus = 8;
         } else if (base == "network") {
             // Step 10: the network, the history malus, and the margins tuned with them.
             o.nnue = current.nnue;
@@ -443,6 +450,18 @@ namespace chess {
             o.lmr_table = current.lmr_table;
             o.correction_history = current.correction_history;
             o.probcut = current.probcut;
+            o.delta_pruning = current.delta_pruning;
+            o.late_move_pruning = current.late_move_pruning;
+            o.iir = current.iir;
+            o.singular = current.singular;
+            o.lmr_scale = current.lmr_scale;
+            o.mvv_scale = current.mvv_scale;
+            o.bad_capture_margin = current.bad_capture_margin;
+            o.delta_margin = current.delta_margin;
+            o.lmp_base = current.lmp_base;
+            o.iir_depth = current.iir_depth;
+            o.singular_depth = current.singular_depth;
+            o.probcut_margin = current.probcut_margin;
         }
 
         return finish();

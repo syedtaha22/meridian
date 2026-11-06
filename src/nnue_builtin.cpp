@@ -67,6 +67,8 @@ namespace chess::nnue {
                 net->output_bias[bucket] = kBuiltinOutputBias[bucket];
             }
 
+            net->squared = kBuiltinSquared;
+
             return std::shared_ptr<const Network>(net);
         }();
         return network;
